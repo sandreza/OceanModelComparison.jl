@@ -57,13 +57,15 @@ end
         vy = ∇u[2, 2]
     end
 
-    ∇u² = ux^2 + uy^2 + vx^2 + vy^2
-
+    ∇u² = ux^2 + vx^2 + uy^2 + vy^2
     arg = (sqrt(∇u²) * Δh / ϰ.Δu)^ϰ.smoothness_exponent
-
-    νʰ = m.νʰ + ϰ.νʰ_min + (ϰ.νʰ_max - ϰ.νʰ_min) * tanh(arg)
-
-    return Diagonal(@SVector [νʰ, νʰ, m.νᶻ])
+    νʰxy = m.νʰ + ϰ.νʰ_min + (ϰ.νʰ_max - ϰ.νʰ_min) * tanh(arg)
+    #=
+    ∇u² = uy^2 + vy^2
+    arg = (sqrt(∇u²) * Δh / ϰ.Δu)^ϰ.smoothness_exponent
+    νʰy = m.νʰ + ϰ.νʰ_min + (ϰ.νʰ_max - ϰ.νʰ_min) * tanh(arg)
+    =#
+    return Diagonal(@SVector [νʰxy, νʰxy, m.νᶻ])
 end
 
 @inline function diffusivity_tensor(m::HydrostaticBoussinesqModel{<:StabilizingDissipation}, ∇θ)
@@ -81,13 +83,15 @@ end
     ϰ = m.stabilizing_dissipation
     Δh = ϰ.minimum_node_spacing
 
-    ∇θ² = θx^2 + θy^2 + θz^2
-
+    ∇θ² = θx^2 
     arg = (sqrt(∇θ²) * Δh / ϰ.Δθ)^ϰ.smoothness_exponent
+    κʰx = m.κʰ + ϰ.κʰ_min + (ϰ.κʰ_max - ϰ.κʰ_min) * tanh(arg)
 
-    κʰ = m.κʰ + ϰ.κʰ_min + (ϰ.κʰ_max - ϰ.κʰ_min) * tanh(arg)
+    ∇θ² = θy^2 
+    arg = (sqrt(∇θ²) * Δh / ϰ.Δθ)^ϰ.smoothness_exponent
+    κʰy = m.κʰ + ϰ.κʰ_min + (ϰ.κʰ_max - ϰ.κʰ_min) * tanh(arg)
 
-    return Diagonal(@SVector [κʰ, κʰ, κᶻ])
+    return Diagonal(@SVector [κʰx, κʰy, κᶻ])
 end
 
 end # module

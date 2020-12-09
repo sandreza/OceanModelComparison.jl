@@ -37,10 +37,11 @@ function run(;
              array_type = Array,
              output_time_interval = 2,
              stabilizing_dissipation = nothing,
-             stop_time = 200)
+             stop_time = 200,
+             augment_name = "")
 
     name = @sprintf("climate_machine_unstable_bickley_jet_Ne%d_Np%d_ν%.1e_no_rotation", Ne, Np, ν)
-
+    name *= augment_name
     ClimateMachine.Settings.array_type = array_type
 
     # Domain
@@ -201,41 +202,38 @@ end
 include("StabilizingDissipations.jl")
 using .StabilizingDissipations: StabilizingDissipation
 
-Ne = 8
-Np = 3
+# begin loop
+for DOF in (32)
+for Np  in (2)# (2,3,4,5,6)
+for diffusive_cfl in [1e-1, 1e-4]
+for reduction in [1e0, 1e4] 
+for smoothness_exponent in [1, 10]
 
-time_step = 0.1 * effective_node_spacing(Ne, Np) / c
-
+Ne = round(Int, DOF / (Np+1))
+println("Doing DOF=", DOF)
+println("Polynomial Order=", Np)
+time_step = 1.0 * effective_node_spacing(Ne, Np) / c / (Np+1)
+κ = effective_node_spacing(Ne, Np)^2 / time_step
 test_dissipation = StabilizingDissipation(minimum_node_spacing = effective_node_spacing(Ne, Np),
                                           time_step = time_step,
-                                          Δu = 1e-3,
-                                          Δθ = 1e-3)
+                                          Δu = 2.0 / Np,
+                                          Δθ = 1.0 / Np,
+                                          diffusive_cfl = diffusive_cfl,
+                                          κʰ_min = diffusive_cfl * κ /reduction,
+                                          νʰ_min = diffusive_cfl * κ /reduction,
+                                          smoothness_exponent = smoothness_exponent)
+augment_name = @sprintf("_diffusive_cfl%0.1e_reduction%0.1e_smoothness_exponent%.1e", diffusive_cfl, reduction, smoothness_exponent)
+name = run(Ne=Ne, Np=Np, 
+           stabilizing_dissipation=test_dissipation,
+           time_step = time_step,
+           augment_name = augment_name)
 
-name = run(Ne=Ne, Np=Np, stabilizing_dissipation=test_dissipation)
+println("Done with " * name)
 visualize(name)
 
-#=
-for DOF in (32, 64, 128, 256, 512)
-    for Np in (2, 3, 4, 5, 6)
-        Ne = round(Int, DOF / (Np+1))
-        name = run(Ne=16, Np=3, safety=0.1)
-        visualize(name)
-    end
+end
+end
+end
+end
 end
 
-for DOF in (512,)
-    for Np in (2, 3, 4, 5, 6)
-        Ne = round(Int, DOF / (Np+1))
-        name = run(Ne=16, Np=3, safety=0.1, ν=1e-4)
-        visualize(name)
-    end
-end
-
-for DOF in (1024,)
-    for Np in (2, 3, 4, 5, 6)
-        Ne = round(Int, DOF / (Np+1))
-        name = run(Ne=16, Np=3, safety=0.1, ν=1e-5)
-        visualize(name)
-    end
-end
-=#
