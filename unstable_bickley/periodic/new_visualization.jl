@@ -79,7 +79,7 @@ timerange = Int.(collect(range(1, 100, length = 100)))
 time_slider = LSlider(scene, range = timerange, startvalue = 1)
 time_node = time_slider.value
 
-xrange = Int.(collect(range(8, 100, length = 100-8+1)))
+xrange = Int.(collect(range(8, 128, length = 128-8+1)))
 x_slider = LSlider(scene, range = xrange, startvalue = 32)
 x_node = x_slider.value
 
