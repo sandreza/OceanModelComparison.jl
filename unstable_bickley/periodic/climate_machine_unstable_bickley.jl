@@ -27,7 +27,7 @@ include("Bickley.jl")
 using .Bickley
 
 # Low-p assumption:
-effective_node_spacing(Ne, Np, Lx=4π) = Lx / (Ne * (Np + 1))
+effective_node_spacing(Ne, Np, Lx=4π) = Lx / (Ne * (Np + 1)^2)
 
 function run(;
              Ne = 4,
@@ -198,21 +198,21 @@ function visualize(name, contours=false)
 
     return nothing
 end
-
+##
 include("StabilizingDissipations.jl")
 using .StabilizingDissipations: StabilizingDissipation
 
-# begin loop
+# begin loop, Currently using vorticity criteria
 for DOF in (32)
 for Np  in (2)# (2,3,4,5,6)
-for diffusive_cfl in [1e-1, 1e-4]
-for reduction in [1e0, 1e4] 
-for smoothness_exponent in [1, 10]
+for diffusive_cfl in [1e-4] # [1e-1, 1e-4]
+for reduction in [1e4] # [1e0, 1e4] 
+for smoothness_exponent in [2] # [1, 10]
 
 Ne = round(Int, DOF / (Np+1))
 println("Doing DOF=", DOF)
 println("Polynomial Order=", Np)
-time_step = 1.0 * effective_node_spacing(Ne, Np) / c / (Np+1)
+time_step = 1.0 * effective_node_spacing(Ne, Np) / c 
 κ = effective_node_spacing(Ne, Np)^2 / time_step
 test_dissipation = StabilizingDissipation(minimum_node_spacing = effective_node_spacing(Ne, Np),
                                           time_step = time_step,

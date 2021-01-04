@@ -48,7 +48,6 @@ end
 @inline function viscosity_tensor(m::HydrostaticBoussinesqModel{<:StabilizingDissipation}, ∇u)
     ϰ = m.stabilizing_dissipation
     Δh = ϰ.minimum_node_spacing
-
     # ∇u is a 2 × 3 tensor (eg ∇uʰ, where ∇ is 3D)
     @inbounds begin
         ux = ∇u[1, 1]
@@ -56,33 +55,24 @@ end
         vx = ∇u[2, 1]
         vy = ∇u[2, 2]
     end
-
     ∇u² = ux^2 + vx^2 + uy^2 + vy^2
     arg = (sqrt(∇u²) * Δh / ϰ.Δu)^ϰ.smoothness_exponent
     νʰxy = m.νʰ + ϰ.νʰ_min + (ϰ.νʰ_max - ϰ.νʰ_min) * tanh(arg)
-    #=
-    ∇u² = uy^2 + vy^2
-    arg = (sqrt(∇u²) * Δh / ϰ.Δu)^ϰ.smoothness_exponent
-    νʰy = m.νʰ + ϰ.νʰ_min + (ϰ.νʰ_max - ϰ.νʰ_min) * tanh(arg)
-    =#
     return Diagonal(@SVector [νʰxy, νʰxy, m.νᶻ])
 end
 
 @inline function diffusivity_tensor(m::HydrostaticBoussinesqModel{<:StabilizingDissipation}, ∇θ)
-
     @inbounds begin
         θx = ∇θ[1]
         θy = ∇θ[2]
         θz = ∇θ[3]
     end
-
     # Compute convective adjustement diffusivity
     θz < 0 ? κᶻ = m.κᶜ : κᶻ = m.κᶻ
-
     # Compute stabilizing dissipation
     ϰ = m.stabilizing_dissipation
     Δh = ϰ.minimum_node_spacing
-
+    
     ∇θ² = θx^2 
     arg = (sqrt(∇θ²) * Δh / ϰ.Δθ)^ϰ.smoothness_exponent
     κʰx = m.κʰ + ϰ.κʰ_min + (ϰ.κʰ_max - ϰ.κʰ_min) * tanh(arg)
