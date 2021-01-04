@@ -64,8 +64,8 @@ end
 toc = time()
 =#
 ##
-
-resolution = (2358, 1364)
+# scene.px_area to get current resolution
+resolution = (2062, 1430)
 width = round(Int, resolution[1] / 5)
 scene, layout = layoutscene(resolution = resolution)
 lscene = layout[2:3, 2:3] = LScene(scene, title = "u")
@@ -102,15 +102,20 @@ interpolationchoices = [true, false]
 interpolationnode = Node(interpolationchoices[1])
 
 
-
 # u
 ϕtmp =  @lift(ScalarField(u_timeseries[$time_node].data, gridhelper))
 ϕu = @lift(($ϕtmp($xx, $yy, znew))[:,:,1])
 urange = extrema(ut)
 # ϕu = @lift(ut[:, :, $time_node])
-heatmap!(lscene, xx, yy, ϕu, colormap = :balance, levels = 20, colorrange = urange, interpolate = interpolationnode)
-axis = scene.children[1][Axis]
-println()
+heatmap1 = heatmap!(lscene, xx, yy, ϕu, colormap = :balance, levels = 20, colorrange = urange, interpolate = interpolationnode)
+
+# color bar
+cbar = LColorbar(scene, heatmap1)
+cbar.width = Relative(1/3)
+cbar.height = Relative(2/3)
+cbar.ticksvisible = false
+cbar.ticklabelsize = 0
+cbar.halign = :left
 # v 
 vrange = extrema(vt)
 #ϕv = @lift(vt[:, :, $time_node])
@@ -118,6 +123,7 @@ vrange = extrema(vt)
 ϕv = @lift(($ϕtmp($xx, $yy, znew))[:,:,1])
 vrange = extrema(vt)
 heatmap!(lscene2, xx, yy, ϕv, colormap = :balance, levels = 20, colorrange = vrange, interpolate = true)
+
 
 # η 
 ηrange = extrema(ηt)
@@ -140,24 +146,28 @@ interpolationmenu = LMenu(scene, options = zip(interpolationlabels, interpolatio
 on(interpolationmenu.selection) do s
     interpolationnode[] = s
     # hack
-    heatmap!(lscene, xx, yy, ϕu, colormap = :balance, levels = 20, colorrange = urange, interpolate = s)
-    heatmap!(lscene2, xx, yy, ϕv, colormap = :balance, levels = 20, colorrange = vrange, interpolate = s)
-    heatmap!(lscene3, xx, yy, ϕη, colormap = :balance, levels = 20, colorrange = ηrange, interpolate = s)
-    heatmap!(lscene4, xx, yy, ϕc, colormap = :balance, levels = 20, colorrange = crange, interpolate = s)
+    heatmap!(lscene, xx, yy, ϕu, colormap = :balance, colorrange = urange, interpolate = s)
+    heatmap!(lscene2, xx, yy, ϕv, colormap = :balance, colorrange = vrange, interpolate = s)
+    heatmap!(lscene3, xx, yy, ϕη, colormap = :balance, colorrange = ηrange, interpolate = s)
+    heatmap!(lscene4, xx, yy, ϕc, colormap = :balance, colorrange = crange, interpolate = s)
 end
 
 timetext = @lift("time, t = " * @sprintf("%0.1f", 2 * ($time_node - 1)))
-xtext = @lift("x interpolation = " * string($x_node) * " grid points")
-ytext = @lift("y interpolation = " * string($y_node) * " grid points")
+xtext = @lift("x interpolation = " * string($x_node) * " points")
+ytext = @lift("y interpolation = " * string($y_node) * " points")
 # slider padding = (left, right, bottom, top)
-layout[2:3, 1] = vgrid!(
-    LText(scene, "plotting options", width = nothing, textsize = 30, padding = (0,0, 10, -20)),
+# last entry moves title up and down
+# second to last pushes things away
+layout[2:6, 1] = vgrid!(
+    LText(scene, "plotting options", width = width, textsize = 30, padding = (0,0, 10, 0)),
     interpolationmenu,
-    LText(scene, timetext, width = nothing, textsize = 30),
+    LText(scene, timetext, width = width, textsize = 30),
     time_slider,
-    LText(scene, xtext, width = nothing, textsize = 30),
+    LText(scene, xtext, width = width, textsize = 30),
     x_slider,
-    LText(scene, ytext, width = nothing, textsize = 30),
+    LText(scene, ytext, width = width, textsize = 30),
     y_slider,
+    LText(scene, "ColorBar", width = width, textsize = 50, padding = (0, 0, 0, 100)),
+    cbar,
 )
 display(scene)
