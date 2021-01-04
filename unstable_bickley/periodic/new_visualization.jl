@@ -68,11 +68,17 @@ toc = time()
 resolution = (2358, 1364)
 width = round(Int, resolution[1] / 5)
 scene, layout = layoutscene(resolution = resolution)
-lscene = layout[2, 2] = LScene(scene)
-lscene2 = layout[2, 3] = LScene(scene)
-lscene3 = layout[3, 2] = LScene(scene)
-lscene4 = layout[3, 3] = LScene(scene)
+lscene = layout[2:3, 2:3] = LScene(scene, title = "u")
+lscene2 = layout[2:3, 4:5] = LScene(scene)
+lscene3 = layout[5:6, 2:3] = LScene(scene)
+lscene4 = layout[5:6, 4:5] = LScene(scene)
 layout[1,1] = LText(scene, "Menu", width = width, textsize = 50)
+
+padding = (width/2, 0 , 0, 0)
+layout[1,2:3] = LText(scene, "u", width = width, textsize = 50, padding = padding)
+layout[4,2:3] = LText(scene, "η", width = width, textsize = 50, padding = padding)
+layout[1,4:5] = LText(scene, "v", width = width, textsize = 50, padding = padding)
+layout[4,4:5] = LText(scene, "c", width = width, textsize = 50, padding = padding)
 
 # Clim sliders
 timerange = Int.(collect(range(1, 100, length = 100)))
@@ -80,21 +86,31 @@ time_slider = LSlider(scene, range = timerange, startvalue = 1)
 time_node = time_slider.value
 
 xrange = Int.(collect(range(8, 128, length = 128-8+1)))
+yrange = xrange
 x_slider = LSlider(scene, range = xrange, startvalue = 32)
 x_node = x_slider.value
+
+y_slider = LSlider(scene, range = yrange, startvalue = 32)
+y_node = y_slider.value
+
+xx = @lift(range(-2π, 2π, length = $x_node))
+yy = @lift(range(-2π, 2π, length = $y_node))
+
+# Menu
+interpolationlabels = ["contour", "heatmap"]
+interpolationchoices = [true, false]
+interpolationnode = Node(interpolationchoices[1])
 
 
 
 # u
-xx = @lift(range(-2π, 2π, length = $x_node))
-yy = @lift(range(-2π, 2π, length = $x_node))
 ϕtmp =  @lift(ScalarField(u_timeseries[$time_node].data, gridhelper))
 ϕu = @lift(($ϕtmp($xx, $yy, znew))[:,:,1])
 urange = extrema(ut)
 # ϕu = @lift(ut[:, :, $time_node])
-heatmap!(lscene, xx, yy, ϕu, colormap = :balance, levels = 20, colorrange = urange, interpolate = true)
+heatmap!(lscene, xx, yy, ϕu, colormap = :balance, levels = 20, colorrange = urange, interpolate = interpolationnode)
 axis = scene.children[1][Axis]
-
+println()
 # v 
 vrange = extrema(vt)
 #ϕv = @lift(vt[:, :, $time_node])
@@ -119,11 +135,29 @@ crange = extrema(ct)
 ϕc = @lift(($ϕtmp($xx, $yy, znew))[:,:,1])
 heatmap!(lscene4, xx, yy, ϕc, colormap = :balance, levels = 20, colorrange = crange, interpolate = true)
 
-# slider
+#
+interpolationmenu = LMenu(scene, options = zip(interpolationlabels, interpolationchoices))
+on(interpolationmenu.selection) do s
+    interpolationnode[] = s
+    # hack
+    heatmap!(lscene, xx, yy, ϕu, colormap = :balance, levels = 20, colorrange = urange, interpolate = s)
+    heatmap!(lscene2, xx, yy, ϕv, colormap = :balance, levels = 20, colorrange = vrange, interpolate = s)
+    heatmap!(lscene3, xx, yy, ϕη, colormap = :balance, levels = 20, colorrange = ηrange, interpolate = s)
+    heatmap!(lscene4, xx, yy, ϕc, colormap = :balance, levels = 20, colorrange = crange, interpolate = s)
+end
+
+timetext = @lift("time, t = " * @sprintf("%0.1f", 2 * ($time_node - 1)))
+xtext = @lift("x interpolation = " * string($x_node) * " grid points")
+ytext = @lift("y interpolation = " * string($y_node) * " grid points")
+# slider padding = (left, right, bottom, top)
 layout[2:3, 1] = vgrid!(
-    LText(scene, "time", width = nothing),
+    LText(scene, "plotting options", width = nothing, textsize = 30, padding = (0,0, 10, -20)),
+    interpolationmenu,
+    LText(scene, timetext, width = nothing, textsize = 30),
     time_slider,
-    LText(scene, "coarseness", width = nothing),
+    LText(scene, xtext, width = nothing, textsize = 30),
     x_slider,
+    LText(scene, ytext, width = nothing, textsize = 30),
+    y_slider,
 )
 display(scene)
