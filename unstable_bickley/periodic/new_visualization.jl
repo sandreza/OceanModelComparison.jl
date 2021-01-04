@@ -152,7 +152,7 @@ on(interpolationmenu.selection) do s
     heatmap!(lscene4, xx, yy, ϕc, colormap = :balance, colorrange = crange, interpolate = s)
 end
 
-timetext = @lift("time, t = " * @sprintf("%0.1f", 2 * ($time_node - 1)))
+timetext = @lift("time, t = " * @sprintf("%0.1f", 2 * ($time_node - 1)/99*100))
 xtext = @lift("x interpolation = " * string($x_node) * " points")
 ytext = @lift("y interpolation = " * string($y_node) * " points")
 # slider padding = (left, right, bottom, top)
@@ -168,6 +168,20 @@ layout[2:6, 1] = vgrid!(
     LText(scene, ytext, width = width, textsize = 30),
     y_slider,
     LText(scene, "ColorBar", width = width, textsize = 50, padding = (0, 0, 0, 100)),
+    LText(scene, "state min/max over simulation", width = width, textsize = 20, padding = (0, 0, 0, 00)),
     cbar,
 )
 display(scene)
+##
+record_interaction = false
+seconds = 20
+fps = 10
+frames = round(Int, fps * seconds )
+if record_interaction
+record(scene, pwd() * "/test.mp4"; framerate = fps) do io
+    for i = 1:frames
+        sleep(1/fps)
+        recordframe!(io)
+    end
+end
+end
