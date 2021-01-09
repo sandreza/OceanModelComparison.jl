@@ -26,24 +26,25 @@ v_timeseries = OutputTimeSeries(:v, filepath);
 η_timeseries = OutputTimeSeries(:η, filepath);
 c_timeseries = OutputTimeSeries(:θ, filepath);
 
-
+##
 ## Note that simulation was actually 3D
-grid = u_timeseries.grid
-gridhelper = GridHelper(grid)
+gridu = u_timeseries.grid
+gridhelper = GridHelper(gridu)
 eh = gridhelper.element 
 ih = gridhelper.interpolation     
-x, y, z = coordinates(grid)
-xC, yC, zC = cellcenters(grid)
+x, y, z = coordinates(gridu)
+xC, yC, zC = cellcenters(gridu)
 ϕ =  ScalarField(copy(x), gridhelper)
 ϕ((0,0,0))
 xnew = range(-2π, 2π, length = 3*43)
 ynew = range(-2π, 2π, length = 3*43)
 znew = range(0,0, length = 1 )
+ϕ(xnew, ynew, znew)
 ## comment, not a fair comparison, needs to be divided by polynomial order
 ## u = assemble(tmp).data[:, :, 1] about 10x slower
 
 
-#=
+
 nt = 100
 ut = zeros(length(xnew), length(ynew), nt)
 vt = zeros(length(xnew), length(ynew), nt)
@@ -62,7 +63,7 @@ for i in 1:nt
     ct[:, :, i] .= view(ϕ(xnew, ynew, znew), :, :, 1)
 end
 toc = time()
-=#
+
 ##
 # scene.px_area to get current resolution
 resolution = (2062, 1430)
@@ -126,11 +127,13 @@ heatmap!(lscene2, xx, yy, ϕv, colormap = :balance, levels = 20, colorrange = vr
 
 
 # η 
-ηrange = extrema(ηt)
-# ϕη = @lift(ηt[:, :, $time_node])
+# ηrange = extrema(ut) ./ 100000
+ϕη = @lift(ηt[:, :, $time_node])
 
-ϕtmp =  @lift(ScalarField(η_timeseries[$time_node].data, gridhelper))
-ϕη = @lift(($ϕtmp($xx, $yy, znew))[:,:,1])
+# ϕtmp =  @lift(ScalarField(u_timeseries[$time_node].data, gridhelper))
+
+# ϕη = @lift(($ϕtmp($xx, $yy, znew))[:,:,1] - ($ϕtmp($xx, $yy, range(0.5,0.5, length = 1 )))[:,:,1])
+ηrange = @lift(extrema($ϕη))
 # wierd bug
 heatmap!(lscene3, xx, yy,  ϕη, colormap = :balance, levels = 20, colorrange = ηrange, interpolate = true)
 

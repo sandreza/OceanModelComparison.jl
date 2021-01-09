@@ -1,8 +1,8 @@
 # Assumes new visualization.jl has been round
 # and vizinanigans
 using Random, Statistics
-x, y, z = coordinates(grid)
-xC, yC, zC = cellcenters(grid)
+x, y, z = coordinates(gridu)
+xC, yC, zC = cellcenters(gridu)
 ϕ =  ScalarField(copy(x), gridhelper)
 
 xnew = range(-2π, 2π, length = 3*43)
@@ -26,7 +26,8 @@ statenames = ["u", "v", "η", "c"]
 statistics = true
 title = "Field at t = " * string(2*i) * " :"
 scene = visualize(states, statenames = statenames, aspect = (1,1,0.1), statistics = statistics, title = title);
-
+##
+scene = volumeslice(states, statenames = statenames, aspect = (1,1,0.1), statistics = statistics)
 ##
 record_interaction = false
 seconds = 20
