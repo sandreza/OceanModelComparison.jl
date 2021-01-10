@@ -19,6 +19,7 @@ polynomialorders(::DiscontinuousSpectralElementGrid{T, dim, N}) where {T, dim, N
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
 
 name = "climate_machine_unstable_bickley_jet_Ne43_Np2_ν0.0e+00_no_rotation_diffusive_cfl1.0e-02_reduction1.0e+04_smoothness_exponent2.0e+00"
+name = "climate_machine_unstable_bickley_jet_Ne8_Np3_ν0.0e+00_no_rotation_test43"
 filepath = name * ".jld2"
 
 u_timeseries = OutputTimeSeries(:u, filepath);
@@ -42,10 +43,25 @@ znew = range(0,0, length = 1 )
 ϕ(xnew, ynew, znew)
 ## comment, not a fair comparison, needs to be divided by polynomial order
 ## u = assemble(tmp).data[:, :, 1] about 10x slower
+ti = 14
+field = u_timeseries[ti]
+u1 = assemble(field).data[:,:,1]
+u2 = assemble(field).data[:,:,2]
+u3 = assemble(field).data[:,:,3]
+
+##
+function stable_differentiation!(D)
+    n = size(D)[1]
+    for i in 1:n
+        D[i,i] = 0.0
+        D[i,i] = -sum(D[i,:])
+    end
+    return nothing
+end
+##
 
 
-
-nt = 100
+nt = length(u_timeseries)-1
 ut = zeros(length(xnew), length(ynew), nt)
 vt = zeros(length(xnew), length(ynew), nt)
 ηt = zeros(length(xnew), length(ynew), nt)
@@ -63,6 +79,7 @@ for i in 1:nt
     ct[:, :, i] .= view(ϕ(xnew, ynew, znew), :, :, 1)
 end
 toc = time()
+println(toc - tic)
 
 ##
 # scene.px_area to get current resolution
@@ -82,7 +99,7 @@ layout[1,4:5] = LText(scene, "v", width = width, textsize = 50, padding = paddin
 layout[4,4:5] = LText(scene, "c", width = width, textsize = 50, padding = padding)
 
 # Clim sliders
-timerange = Int.(collect(range(1, 100, length = 100)))
+timerange = Int.(collect(range(1, nt, length = nt)))
 time_slider = LSlider(scene, range = timerange, startvalue = 1)
 time_node = time_slider.value
 
@@ -108,7 +125,7 @@ interpolationnode = Node(interpolationchoices[1])
 ϕu = @lift(($ϕtmp($xx, $yy, znew))[:,:,1])
 urange = extrema(ut)
 # ϕu = @lift(ut[:, :, $time_node])
-heatmap1 = heatmap!(lscene, xx, yy, ϕu, colormap = :balance, levels = 20, colorrange = urange, interpolate = interpolationnode)
+heatmap1 = AbstractPlotting.heatmap!(lscene, xx, yy, ϕu, colormap = :balance, levels = 20, colorrange = urange, interpolate = interpolationnode)
 
 # color bar
 cbar = LColorbar(scene, heatmap1)
@@ -123,7 +140,7 @@ vrange = extrema(vt)
 ϕtmp =  @lift(ScalarField(v_timeseries[$time_node].data, gridhelper))
 ϕv = @lift(($ϕtmp($xx, $yy, znew))[:,:,1])
 vrange = extrema(vt)
-heatmap!(lscene2, xx, yy, ϕv, colormap = :balance, levels = 20, colorrange = vrange, interpolate = true)
+AbstractPlotting.heatmap!(lscene2, xx, yy, ϕv, colormap = :balance, levels = 20, colorrange = vrange, interpolate = true)
 
 
 # η 
@@ -135,24 +152,24 @@ heatmap!(lscene2, xx, yy, ϕv, colormap = :balance, levels = 20, colorrange = vr
 # ϕη = @lift(($ϕtmp($xx, $yy, znew))[:,:,1] - ($ϕtmp($xx, $yy, range(0.5,0.5, length = 1 )))[:,:,1])
 ηrange = @lift(extrema($ϕη))
 # wierd bug
-heatmap!(lscene3, xx, yy,  ϕη, colormap = :balance, levels = 20, colorrange = ηrange, interpolate = true)
+AbstractPlotting.heatmap!(lscene3, xx, yy,  ϕη, colormap = :balance, levels = 20, colorrange = ηrange, interpolate = true)
 
 # c 
 crange = extrema(ct)
 # ϕc = @lift(ct[:, :, $time_node])
 ϕtmp =  @lift(ScalarField(c_timeseries[$time_node].data, gridhelper))
 ϕc = @lift(($ϕtmp($xx, $yy, znew))[:,:,1])
-heatmap!(lscene4, xx, yy, ϕc, colormap = :balance, levels = 20, colorrange = crange, interpolate = true)
+AbstractPlotting.heatmap!(lscene4, xx, yy, ϕc, colormap = :balance, levels = 20, colorrange = crange, interpolate = true)
 
 #
 interpolationmenu = LMenu(scene, options = zip(interpolationlabels, interpolationchoices))
 on(interpolationmenu.selection) do s
     interpolationnode[] = s
     # hack
-    heatmap!(lscene, xx, yy, ϕu, colormap = :balance, colorrange = urange, interpolate = s)
-    heatmap!(lscene2, xx, yy, ϕv, colormap = :balance, colorrange = vrange, interpolate = s)
-    heatmap!(lscene3, xx, yy, ϕη, colormap = :balance, colorrange = ηrange, interpolate = s)
-    heatmap!(lscene4, xx, yy, ϕc, colormap = :balance, colorrange = crange, interpolate = s)
+    AbstractPlotting.heatmap!(lscene, xx, yy, ϕu, colormap = :balance, colorrange = urange, interpolate = s)
+    AbstractPlotting.heatmap!(lscene2, xx, yy, ϕv, colormap = :balance, colorrange = vrange, interpolate = s)
+    AbstractPlotting.heatmap!(lscene3, xx, yy, ϕη, colormap = :balance, colorrange = ηrange, interpolate = s)
+    AbstractPlotting.heatmap!(lscene4, xx, yy, ϕc, colormap = :balance, colorrange = crange, interpolate = s)
 end
 
 timetext = @lift("time, t = " * @sprintf("%0.1f", 2 * ($time_node - 1)/99*100))
