@@ -204,32 +204,36 @@ using .StabilizingDissipations: StabilizingDissipation
 
 # begin loop, Currently using vorticity criteria
 for DOF in (32)
-for Np  in (2)# (2,3,4,5,6)
-for diffusive_cfl in [1e-4] # [1e-1, 1e-4]
-for reduction in [1e4] # [1e0, 1e4] 
-for smoothness_exponent in [2] # [1, 10]
+for Np  in (3)# (2,3,4,5,6)
+for diffusive_cfl in [1e-1] # [1e-1, 1e-4]
+for reduction in [1e8] # [1e0, 1e4] 
+for smoothness_exponent in [1] # [1, 10]
 
 Ne = round(Int, DOF / (Np+1))
 println("Doing DOF=", DOF)
 println("Polynomial Order=", Np)
 time_step = 1.0 * effective_node_spacing(Ne, Np) / c 
-κ = effective_node_spacing(Ne, Np)^2 / time_step
+κ = effective_node_spacing(Ne, Np)^2 / time_step * 0.1
 test_dissipation = StabilizingDissipation(minimum_node_spacing = effective_node_spacing(Ne, Np),
                                           time_step = time_step,
                                           Δu = 2.0 / Np,
-                                          Δθ = 1.0 / Np,
+                                          Δθ = 30.0 / Np,
                                           diffusive_cfl = diffusive_cfl,
                                           κʰ_min = diffusive_cfl * κ /reduction,
                                           νʰ_min = diffusive_cfl * κ /reduction,
                                           smoothness_exponent = smoothness_exponent)
 augment_name = @sprintf("_diffusive_cfl%0.1e_reduction%0.1e_smoothness_exponent%.1e", diffusive_cfl, reduction, smoothness_exponent)
+augment_name = "_exasim_comparison"
+tic = time()
 name = run(Ne=Ne, Np=Np, 
            stabilizing_dissipation=test_dissipation,
            time_step = time_step,
            augment_name = augment_name)
+toc = time()
+println("Time to run " * augment_name * " is ", (toc - tic) / 60, " minutes")
 
 println("Done with " * name)
-visualize(name)
+# visualize(name)
 
 end
 end

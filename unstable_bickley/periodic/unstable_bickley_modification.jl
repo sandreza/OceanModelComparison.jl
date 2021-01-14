@@ -243,7 +243,7 @@ for smoothness_exponent in [2] # [1, 10]
 DOF = 32
 Np = 3
 diffusive_cfl = 1e-4
-reduction  = 1e4
+reduction  = 1e8
 smoothness_exponent = 2
 ν = 0.0
 array_type = Array
@@ -255,16 +255,17 @@ println("Doing DOF=", DOF)
 println("Polynomial Order=", Np)
 time_step = 1.0 * effective_node_spacing(Ne, Np) / c 
 κ = effective_node_spacing(Ne, Np)^2 / time_step
+##
 test_dissipation = StabilizingDissipation(minimum_node_spacing = effective_node_spacing(Ne, Np),
                                           time_step = time_step,
-                                          Δu = 2.0 / Np,
-                                          Δθ = 1.0 / Np,
+                                          Δu = 20000.0 / Np,
+                                          Δθ = 10000.0 / Np,
                                           diffusive_cfl = diffusive_cfl,
                                           κʰ_min = diffusive_cfl * κ /reduction,
                                           νʰ_min = diffusive_cfl * κ /reduction,
                                           smoothness_exponent = smoothness_exponent)
 # augment_name = @sprintf("_diffusive_cfl%0.1e_reduction%0.1e_smoothness_exponent%.1e", diffusive_cfl, reduction, smoothness_exponent)
-augment_name = "_test8"
+augment_name = "_test80"
 #=
 name = run(Ne=Ne, Np=Np, 
            stabilizing_dissipation=test_dissipation,
@@ -285,14 +286,19 @@ end
 end
 =#
 
-##
-augment_name = "_test43"
+## Start here
+augment_name = "_derivative_4"
 name = @sprintf("climate_machine_unstable_bickley_jet_Ne%d_Np%d_ν%.1e_no_rotation", Ne, Np, ν)
 name *= augment_name
 ClimateMachine.Settings.array_type = array_type
 
 # Domain
-
+DOF = 32 * 2
+Np = 4
+Ne = round(Int, DOF / (Np+1))
+println("Doing DOF=", DOF)
+println("Polynomial Order=", Np)
+time_step = 1.0 * effective_node_spacing(Ne, Np) / c
 domain = RectangularDomain(Ne = (Ne, Ne, 1), Np = Np,
                             x = (-2π, 2π), y = (-2π, 2π), z = (0, 1),
                             periodicity = (true, true, false))
@@ -327,10 +333,15 @@ model = Ocean.HydrostaticBoussinesqSuperModel(
                             OceanBC(Penetrable(FreeSlip()), Insulating()))
 )
 println("modifying the grid")
+#=
 exactz!(model) # make the vertical coordinates all have the same value within an element
 cartesianify!(model.grid) # remove crossterms
-model.grid.vgeo[:,9,:]  .= -0.0 # remove vertical derivatives
-model.grid.vgeo[:,16,:] .= -0.0  # remove JcV terms which come in https://github.com/CliMA/ClimateMachine.jl/blob/433994334c547fb439917c84fb82548a85e81a5f/src/Numerics/DGMethods/DGModel_kernels.jl#L2090
+# remove vertical derivatives
+model.grid.vgeo[:,9,:]  .= 0.0 
+model.grid.sgeo[5, :, 5, :] .= 0.0
+model.grid.sgeo[5, :, 6, :] .= 0.0
+=#
+# model.grid.vgeo[:,16,:] .= -0.0  # remove JcV terms which come in https://github.com/CliMA/ClimateMachine.jl/blob/433994334c547fb439917c84fb82548a85e81a5f/src/Numerics/DGMethods/DGModel_kernels.jl#L2090
 # We prepare a callback that periodically fetches the horizontal velocity and
 # tracer concentration for later animation,
 

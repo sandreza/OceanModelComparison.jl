@@ -2,6 +2,7 @@ using GLMakie, AbstractPlotting
 using ImageTransformations, Colors
 using AbstractPlotting.MakieLayout
 using Statistics, Printf
+import Makie: heatmap!
 
 
 """

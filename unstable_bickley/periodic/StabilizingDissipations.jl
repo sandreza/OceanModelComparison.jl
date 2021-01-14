@@ -67,7 +67,7 @@ end
         θy = ∇θ[2]
         θz = ∇θ[3]
     end
-    # Compute convective adjustement diffusivity
+    # Compute convective adjustement diffusivity, take away
     θz < 0 ? κᶻ = m.κᶜ : κᶻ = m.κᶻ
     # Compute stabilizing dissipation
     ϰ = m.stabilizing_dissipation

@@ -31,16 +31,16 @@ function (ϕ::ScalarField)(xlist::StepRangeLen,ylist::StepRangeLen,zlist::StepRa
     newfield = zeros(length(xlist), length(ylist), length(zlist))
     if threads
         @threads for k in eachindex(zlist)
-            for j in eachindex(ylist)
-                for i in eachindex(xlist)
+            @inbounds for j in eachindex(ylist)
+                @inbounds for i in eachindex(xlist)
                         newfield[i,j,k] = getvalue(ϕ.data, (xlist[i],ylist[j],zlist[k]), ϕ.grid)
                 end
             end
         end
     else
-        for k in eachindex(zlist)
-            for j in eachindex(ylist)
-                for i in eachindex(xlist)
+        @inbounds for k in eachindex(zlist)
+            @inbounds for j in eachindex(ylist)
+                @inbounds for i in eachindex(xlist)
                         newfield[i,j,k] = getvalue(ϕ.data, (xlist[i],ylist[j],zlist[k]), ϕ.grid)
                 end
             end
@@ -53,13 +53,13 @@ function (ϕ::ScalarField)(xlist::StepRangeLen,ylist::StepRangeLen; threads = fa
     newfield = zeros(length(xlist), length(ylist))
     if threads
     @threads for j in eachindex(ylist)
-            for i in eachindex(xlist)
+            @inbounds for i in eachindex(xlist)
                 newfield[i,j] = getvalue(ϕ.data, (xlist[i],ylist[j]), ϕ.grid)
             end
         end
     else
-        for j in eachindex(ylist)
-            for i in eachindex(xlist)
+        @inbounds for j in eachindex(ylist)
+            @inbounds for i in eachindex(xlist)
                     newfield[i,j] = getvalue(ϕ.data, (xlist[i],ylist[j]), ϕ.grid)
             end
         end

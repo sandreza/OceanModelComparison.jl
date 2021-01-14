@@ -18,14 +18,26 @@ using CLIMAParameters: AbstractEarthParameterSet, Planet
 polynomialorders(::DiscontinuousSpectralElementGrid{T, dim, N}) where {T, dim, N} = Tuple([N for i in 1:dim])
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
 
-name = "climate_machine_unstable_bickley_jet_Ne43_Np2_ν0.0e+00_no_rotation_diffusive_cfl1.0e-02_reduction1.0e+04_smoothness_exponent2.0e+00"
-name = "climate_machine_unstable_bickley_jet_Ne8_Np3_ν0.0e+00_no_rotation_test43"
+names = [
+"climate_machine_unstable_bickley_jet_Ne43_Np2_ν0.0e+00_no_rotation_diffusive_cfl1.0e-02_reduction1.0e+04_smoothness_exponent2.0e+00",
+"climate_machine_unstable_bickley_jet_Ne8_Np3_ν0.0e+00_no_rotation_test43",
+"climate_machine_unstable_bickley_jet_Ne73_Np6_ν0.0e+00_no_rotation_diffusive_cfl1.0e+00_reduction1.0e+08_smoothness_exponent1.0e+00",
+"climate_machine_unstable_bickley_jet_Ne8_Np3_ν0.0e+00_no_rotation_no_derivative",
+"climate_machine_unstable_bickley_jet_Ne8_Np3_ν0.0e+00_no_rotation_derivative",
+"climate_machine_unstable_bickley_jet_Ne8_Np3_ν0.0e+00_no_rotation_more_levels",
+"climate_machine_unstable_bickley_jet_Ne8_Np3_ν0.0e+00_no_rotation_no_derivative_3",
+"climate_machine_unstable_bickley_jet_Ne8_Np3_ν0.0e+00_no_rotation_no_derivative_4",
+"climate_machine_unstable_bickley_jet_Ne21_Np2_ν0.0e+00_no_rotation_derivative_2",
+"climate_machine_unstable_bickley_jet_Ne8_Np3_ν0.0e+00_no_rotation_exasim_comparison",
+]
+name = names[end]
 filepath = name * ".jld2"
 
 u_timeseries = OutputTimeSeries(:u, filepath);
 v_timeseries = OutputTimeSeries(:v, filepath);
 η_timeseries = OutputTimeSeries(:η, filepath);
 c_timeseries = OutputTimeSeries(:θ, filepath);
+extrema(c_timeseries[100].data)
 
 ##
 ## Note that simulation was actually 3D
@@ -39,29 +51,17 @@ xC, yC, zC = cellcenters(gridu)
 ϕ((0,0,0))
 xnew = range(-2π, 2π, length = 3*43)
 ynew = range(-2π, 2π, length = 3*43)
-znew = range(0,0, length = 1 )
+znew = range(1,1, length = 1 )
 ϕ(xnew, ynew, znew)
 ## comment, not a fair comparison, needs to be divided by polynomial order
 ## u = assemble(tmp).data[:, :, 1] about 10x slower
-ti = 14
+ti = 50
 field = u_timeseries[ti]
 u1 = assemble(field).data[:,:,1]
 u2 = assemble(field).data[:,:,2]
 u3 = assemble(field).data[:,:,3]
 
-##
-function stable_differentiation!(D)
-    n = size(D)[1]
-    for i in 1:n
-        D[i,i] = 0.0
-        D[i,i] = -sum(D[i,:])
-    end
-    return nothing
-end
-##
-
-
-nt = length(u_timeseries)-1
+nt = length(u_timeseries) - 1
 ut = zeros(length(xnew), length(ynew), nt)
 vt = zeros(length(xnew), length(ynew), nt)
 ηt = zeros(length(xnew), length(ynew), nt)
@@ -80,6 +80,13 @@ for i in 1:nt
 end
 toc = time()
 println(toc - tic)
+
+##
+i = nt - 1
+states = [ut, vt, ηt, ct]
+statenames = ["u", "v", "η", "c"]
+
+scene = volumeslice(states, statenames = statenames, bins = 30)
 
 ##
 # scene.px_area to get current resolution
