@@ -30,7 +30,7 @@ names = [
 "climate_machine_unstable_bickley_jet_Ne21_Np2_ν0.0e+00_no_rotation_derivative_2",
 "climate_machine_unstable_bickley_jet_Ne8_Np3_ν0.0e+00_no_rotation_exasim_comparison",
 ]
-name = names[end]
+name = names[3]
 filepath = name * ".jld2"
 
 u_timeseries = OutputTimeSeries(:u, filepath);
