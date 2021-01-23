@@ -222,15 +222,15 @@ timeend = FT(200) # s
 nout = FT(100)
 dt = FT(0.02) # s
 
-N = 4
-Nˣ = 13
-Nʸ = 13
+N = 1
+Nˣ = 32
+Nʸ = 32
 Lˣ = 4 * FT(π)  # m
 Lʸ = 4 * FT(π)  # m
 
 params = (; N, Nˣ, Nʸ, Lˣ, Lʸ, dt, nout, timeend)
 
-filename = "example4"
+filename = "compare_p" * string(N) * "_N" * "N"
 dgmodel = run_bickley_jet(params, filename = filename)
 
 toc = time()
@@ -246,8 +246,8 @@ x, y, z = coordinates(dg_grid)
 xC, yC, zC = cellcenters(dg_grid)
 ϕ =  ScalarField(copy(x), gridhelper)
 
-newx = range(-2π, 2π, length = 96)
-newy = range(-2π, 2π, length = 96)
+newx = range(-2π, 2π, length = 128)
+newy = range(-2π, 2π, length = 128)
 ##
 ρ  = zeros(length(newx), length(newy), 101)
 ρu = zeros(length(newx), length(newy), 101)
@@ -270,4 +270,18 @@ close(f)
 println("time to interpolate is $(toc-tic)")
 states = [ρ, ρu, ρv, ρθ]
 statenames = ["ρ", "ρu", "ρv", "ρθ"]
-volumeslice(states, statenames = statenames)
+scene = volumeslice(states, statenames = statenames)
+
+##
+record_interaction = true
+seconds = 20
+fps = 10
+frames = round(Int, fps * seconds )
+if record_interaction
+record(scene, pwd() * "/directcompare.mp4"; framerate = fps) do io
+    for i = 1:frames
+        sleep(1/fps)
+        recordframe!(io)
+    end
+end
+end
