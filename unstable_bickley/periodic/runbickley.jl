@@ -80,7 +80,7 @@ function ocean_init_aux!(
     return nothing
 end
 
-function run_bickley_jet(params)
+function run_bickley_jet(params; filename = "example")
     mpicomm = MPI.COMM_WORLD
     ArrayType = ClimateMachine.array_type()
 
@@ -100,6 +100,8 @@ function run_bickley_jet(params)
         DeviceArray = ArrayType,
         polynomialorder = params.N,
     )
+    f = jldopen(filename * ".jld2", "w")
+    f["grid"] = grid
 
     model = TwoDimensionalCompressibleNavierStokes.CNSE2D{FT}(
         (params.Lˣ, params.Lʸ),
@@ -139,6 +141,7 @@ function run_bickley_jet(params)
         dg,
         model,
         Q,
+        filename = filename
     )
 
     eng0 = norm(Q)
@@ -147,7 +150,7 @@ function run_bickley_jet(params)
     ArrayType = %s""" eng0 ArrayType
 
     solve!(Q, odesolver; timeend = params.timeend, callbacks = cbvector)
-
+    close(f)
     return dg
 end
 
@@ -159,7 +162,8 @@ function make_callbacks(
     odesolver,
     dg,
     model,
-    Q,
+    Q;
+    filename = " "
 )
     if isdir(vtkpath)
         rm(vtkpath, recursive = true)
@@ -167,19 +171,8 @@ function make_callbacks(
     mkpath(vtkpath)
 
     function do_output(vtkstep, model, dg, Q)
-        outprefix = @sprintf(
-            "%s/mpirank%04d_step%04d",
-            vtkpath,
-            MPI.Comm_rank(mpicomm),
-            vtkstep
-        )
-        @info "doing JLD2 output" outprefix
-        statenames = flattenednames(vars_state(model, Prognostic(), eltype(Q)))
-        auxnames = flattenednames(vars_state(model, Auxiliary(), eltype(Q)))
-        #=
-        writevtk(outprefix, Q, dg, statenames, dg.state_auxiliary, auxnames)
-        =#
-        f = jldopen("example.jld2", "a+")
+        @info "doing JLD2 output" vtkstep
+        f = jldopen(filename * ".jld2", "a+")
         f[string(vtkstep)] = Q.realdata
         vtkstep += 1
 
@@ -229,38 +222,38 @@ timeend = FT(200) # s
 nout = FT(100)
 dt = FT(0.02) # s
 
-N = 1
-Nˣ = 16
-Nʸ = 16
+N = 4
+Nˣ = 13
+Nʸ = 13
 Lˣ = 4 * FT(π)  # m
 Lʸ = 4 * FT(π)  # m
 
 params = (; N, Nˣ, Nʸ, Lˣ, Lʸ, dt, nout, timeend)
 
-dgmodel = run_bickley_jet(params)
-a = dgmodel.grid
-# @save "example.jld2" a
+filename = "example4"
+dgmodel = run_bickley_jet(params, filename = filename)
+
 toc = time()
 println("The amount of time for the simulation is ", toc - tic)
 ##
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
 include(pwd() * "/unstable_bickley/periodic/vizinanigans2.jl")
-f = jldopen("example.jld2", "a+")
-dg_grid = f["a"]
+f = jldopen(filename * ".jld2", "r+")
 
-
+dg_grid = f["grid"]
 gridhelper = GridHelper(dg_grid)   
 x, y, z = coordinates(dg_grid)
 xC, yC, zC = cellcenters(dg_grid)
 ϕ =  ScalarField(copy(x), gridhelper)
 
-newx = range(-2π, 2π, length = 10)
-newy = range(-2π, 2π, length = 10)
+newx = range(-2π, 2π, length = 96)
+newy = range(-2π, 2π, length = 96)
 ##
 ρ  = zeros(length(newx), length(newy), 101)
 ρu = zeros(length(newx), length(newy), 101)
 ρv = zeros(length(newx), length(newy), 101)
 ρθ = zeros(length(newx), length(newy), 101)
+tic = time()
 for i in 0:100
     Q = f[string(i)]
     ϕ .= Q[:,1,:]
@@ -272,6 +265,9 @@ for i in 0:100
     ϕ .= Q[:,4,:]
     ρθ[:,:,i+1] = ϕ(newx, newy)
 end
+toc = time()
+close(f)
+println("time to interpolate is $(toc-tic)")
 states = [ρ, ρu, ρv, ρθ]
 statenames = ["ρ", "ρu", "ρv", "ρθ"]
 volumeslice(states, statenames = statenames)
