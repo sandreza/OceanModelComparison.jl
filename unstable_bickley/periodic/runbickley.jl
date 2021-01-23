@@ -148,7 +148,7 @@ function run_bickley_jet(params)
 
     solve!(Q, odesolver; timeend = params.timeend, callbacks = cbvector)
 
-    return nothing
+    return dg
 end
 
 function make_callbacks(
@@ -173,11 +173,14 @@ function make_callbacks(
             MPI.Comm_rank(mpicomm),
             vtkstep
         )
-        @info "doing VTK output" outprefix
+        @info "doing JLD2 output" outprefix
         statenames = flattenednames(vars_state(model, Prognostic(), eltype(Q)))
         auxnames = flattenednames(vars_state(model, Auxiliary(), eltype(Q)))
+        #=
         writevtk(outprefix, Q, dg, statenames, dg.state_auxiliary, auxnames)
-
+        =#
+        f = jldopen("example.jld2", "a+")
+        f[string(vtkstep)] = Q.realdata
         vtkstep += 1
 
         return vtkstep
@@ -219,23 +222,56 @@ end
 # RUN THE TESTS #
 #################
 FT = Float64
-vtkpath =
-    abspath(joinpath(ClimateMachine.Settings.output_dir, "vtk_bickley_jet"))
+vtkpath = abspath(joinpath(ClimateMachine.Settings.output_dir, "vtk_bickley_jet"))
 tic = time()
-let
-    timeend = FT(200) # s
-    nout = FT(100)
-    dt = FT(0.02) # s
 
-    N = 2
-    Nˣ = 43
-    Nʸ = 43
-    Lˣ = 4 * FT(π)  # m
-    Lʸ = 4 * FT(π)  # m
+timeend = FT(200) # s
+nout = FT(100)
+dt = FT(0.02) # s
 
-    params = (; N, Nˣ, Nʸ, Lˣ, Lʸ, dt, nout, timeend)
+N = 1
+Nˣ = 16
+Nʸ = 16
+Lˣ = 4 * FT(π)  # m
+Lʸ = 4 * FT(π)  # m
 
-    run_bickley_jet(params)
-end
+params = (; N, Nˣ, Nʸ, Lˣ, Lʸ, dt, nout, timeend)
+
+dgmodel = run_bickley_jet(params)
+a = dgmodel.grid
+# @save "example.jld2" a
 toc = time()
 println("The amount of time for the simulation is ", toc - tic)
+##
+include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
+include(pwd() * "/unstable_bickley/periodic/vizinanigans2.jl")
+f = jldopen("example.jld2", "a+")
+dg_grid = f["a"]
+
+
+gridhelper = GridHelper(dg_grid)   
+x, y, z = coordinates(dg_grid)
+xC, yC, zC = cellcenters(dg_grid)
+ϕ =  ScalarField(copy(x), gridhelper)
+
+newx = range(-2π, 2π, length = 10)
+newy = range(-2π, 2π, length = 10)
+##
+ρ  = zeros(length(newx), length(newy), 101)
+ρu = zeros(length(newx), length(newy), 101)
+ρv = zeros(length(newx), length(newy), 101)
+ρθ = zeros(length(newx), length(newy), 101)
+for i in 0:100
+    Q = f[string(i)]
+    ϕ .= Q[:,1,:]
+    ρ[:,:,i+1]  = ϕ(newx, newy)
+    ϕ .= Q[:,2,:]
+    ρu[:,:,i+1] = ϕ(newx, newy)
+    ϕ .= Q[:,3,:]
+    ρv[:,:,i+1] = ϕ(newx, newy)
+    ϕ .= Q[:,4,:]
+    ρθ[:,:,i+1] = ϕ(newx, newy)
+end
+states = [ρ, ρu, ρv, ρθ]
+statenames = ["ρ", "ρu", "ρv", "ρθ"]
+volumeslice(states, statenames = statenames)
