@@ -1,6 +1,6 @@
 # Unstable Bickley jet
 
-using Printf
+using Printf, JLD2
 using ClimateMachine
 ClimateMachine.init()
 using ClimateMachine.Ocean
@@ -30,14 +30,35 @@ names = [
 "climate_machine_unstable_bickley_jet_Ne21_Np2_ν0.0e+00_no_rotation_derivative_2",
 "climate_machine_unstable_bickley_jet_Ne8_Np3_ν0.0e+00_no_rotation_exasim_comparison",
 ]
-name = names[3]
+name = names[end]
 filepath = name * ".jld2"
-
+jldfile = jldopen(filepath)
 u_timeseries = OutputTimeSeries(:u, filepath);
 v_timeseries = OutputTimeSeries(:v, filepath);
 η_timeseries = OutputTimeSeries(:η, filepath);
 c_timeseries = OutputTimeSeries(:θ, filepath);
 extrema(c_timeseries[100].data)
+
+# reexport grid data
+dg_grid = jldfile["grid"]
+x, y, z = coordinates(dg_grid)
+xC, yC, zC = cellcenters(dg_grid)
+Ω = extrema.((x,y,z))
+topologystring = string(typeof(dg_grid.topology))
+polynomialorder = polynomialorders(dg_grid)
+addup(xC, tol) = sum(abs.(xC[1] .- xC) .≤ tol)
+ne = length(xC)
+ex = round(Int64, ne / addup(xC, 10^4 * eps(maximum(abs.(x)))))
+ey = round(Int64, ne / addup(yC, 10^4 * eps(maximum(abs.(y)))))
+ez = round(Int64, ne / addup(zC, 10^4 * eps(maximum(abs.(z)))))
+elements = (ex,ey,ez)
+velocity_u = [Array(u_timeseries[i].data) for i in 1:2:length(u_timeseries)]
+velocity_v = [Array(v_timeseries[i].data) for i in 1:2:length(u_timeseries)]
+scalar_η = [Array(η_timeseries[i].data) for i in 1:2:length(u_timeseries)]
+scalar_c = [Array(c_timeseries[i].data) for i in 1:2:length(u_timeseries)]
+
+
+@save "example.jld2" Ω polynomialorder elements topologystring velocity_u velocity_v scalar_η scalar_c
 
 ##
 ## Note that simulation was actually 3D
