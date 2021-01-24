@@ -1,4 +1,4 @@
-using Test
+using Test, JLD2
 using ClimateMachine
 ClimateMachine.init()
 using ClimateMachine.GenericCallbacks
@@ -126,8 +126,10 @@ function run_bickley_jet(params; filename = "example")
     )
 
     Q = init_ode_state(dg, FT(0); init_on_cpu = true)
-
-    lsrk = LSRK54CarpenterKennedy(dg, Q, dt = params.dt, t0 = 0)
+    # LSRK144NiegemannDiehlBusch
+    # SSPRK22Heuns
+    # LSRK54CarpenterKennedy
+    lsrk = SSPRK22Heuns(dg, Q, dt = params.dt, t0 = 0)
 
     odesolver = lsrk
 
@@ -218,27 +220,51 @@ FT = Float64
 vtkpath = abspath(joinpath(ClimateMachine.Settings.output_dir, "vtk_bickley_jet"))
 tic = time()
 
-timeend = FT(200) # s
-nout = FT(100)
-dt = FT(0.02) # s
-
+effective_node_spacing(Ne, Np, Lx=4π) = Lx / (Ne * (Np + 1)^2)
 N = 1
-Nˣ = 32
-Nʸ = 32
+DOF = 16
+Ne = round(Int, DOF / (N+1))
+Nˣ = Ne
+Nʸ = Ne
 Lˣ = 4 * FT(π)  # m
 Lʸ = 4 * FT(π)  # m
+# grid
+xrange = range(-Lˣ / 2; length = Nˣ + 1, stop = Lˣ / 2)
+yrange = range(-Lʸ / 2; length = Nʸ + 1, stop = Lʸ / 2)
+mpicomm = MPI.COMM_WORLD
+brickrange = (xrange, yrange)
+topl = BrickTopology(
+    mpicomm,
+    brickrange,
+    periodicity = (true, true),
+    boundary = ((0, 0), (0, 0)),
+)
+grid = DiscontinuousSpectralElementGrid(
+    topl,
+    FloatType = FT,
+    DeviceArray = Array,
+    polynomialorder = N,
+)
+Δx =  min_node_distance(grid)
+cfl = 0.3
+dt = cfl * Δx / √10
+# run
+timeend = FT(200) # s
+nout = round(Int, 2 / dt)
+dt = 2 / nout
 
 params = (; N, Nˣ, Nʸ, Lˣ, Lʸ, dt, nout, timeend)
 
-filename = "compare_p" * string(N) * "_N" * "N"
+filename = "compare_p" * string(N) * "_N" * string(Ne)
 dgmodel = run_bickley_jet(params, filename = filename)
 
 toc = time()
 println("The amount of time for the simulation is ", toc - tic)
+f = jldopen(filename * ".jld2", "a+")
+f["6threadsimulationtime"] = toc - tic
 ##
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
 include(pwd() * "/unstable_bickley/periodic/vizinanigans2.jl")
-f = jldopen(filename * ".jld2", "r+")
 
 dg_grid = f["grid"]
 gridhelper = GridHelper(dg_grid)   
@@ -246,8 +272,8 @@ x, y, z = coordinates(dg_grid)
 xC, yC, zC = cellcenters(dg_grid)
 ϕ =  ScalarField(copy(x), gridhelper)
 
-newx = range(-2π, 2π, length = 128)
-newy = range(-2π, 2π, length = 128)
+newx = range(-2π, 2π, length = 128 * 2)
+newy = range(-2π, 2π, length = 128 * 2)
 ##
 ρ  = zeros(length(newx), length(newy), 101)
 ρu = zeros(length(newx), length(newy), 101)
