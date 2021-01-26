@@ -38,6 +38,7 @@ if et < cmt
     println("Exasim was faster by $(cmt-et) seconds")
 else
     println("ClimateMachine was faster by $(et - cmt) seconds")
+    println("OI ClimateMachine was faster by $(et - oicmt) seconds")
 end
 
 oi_grid = oiclimatemachine["grid"]

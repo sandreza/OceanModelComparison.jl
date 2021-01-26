@@ -238,7 +238,7 @@ tic = time()
 
 effective_node_spacing(Ne, Np, Lx=4π) = Lx / (Ne * (Np + 1)^2)
 N = 1
-Nint = 3
+Nint = N+1
 DOF = 128
 Ne = round(Int, DOF / (N+1))
 Nˣ = Ne
@@ -283,7 +283,7 @@ f["iop"] = Nint
 close(f)
 ##
 N = 4
-DOF = 32
+DOF = 128
 Ne = round(Int, DOF / (N+1))
 filename = "overint_p" * string(N) * "_N" * string(Ne)
 f = jldopen(filename * ".jld2", "r+")
