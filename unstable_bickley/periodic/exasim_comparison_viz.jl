@@ -20,13 +20,11 @@ for N in 1:4
 Ne = round(Int, DOF / (N+1))
 filename = "compare_p" * string(N) * "_N" * string(Ne)
 f = jldopen(filename * ".jld2", "r+")
-
 dg_grid = f["grid"]
 gridhelper = GridHelper(dg_grid)   
 x, y, z = coordinates(dg_grid)
 xC, yC, zC = cellcenters(dg_grid)
 ϕ =  ScalarField(copy(x), gridhelper)
-
 newx = range(-2π, 2π, length = 128)
 newy = range(-2π, 2π, length = 128)
 ρθ = zeros(length(newx), length(newy), 101)
