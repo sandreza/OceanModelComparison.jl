@@ -34,7 +34,7 @@ using StaticArrays
 using Logging, Printf, Dates
 
 import ClimateMachine.Ocean: ocean_init_state!, ocean_init_aux!
-
+##
 function ocean_init_state!(
     ::TwoDimensionalCompressibleNavierStokes.TwoDimensionalCompressibleNavierStokesEquations,
     state,
@@ -263,6 +263,11 @@ println("The amount of time for the simulation is ", toc - tic)
 f = jldopen(filename * ".jld2", "a+")
 f["6threadsimulationtime"] = toc - tic
 ##
+N = 4
+DOF = 256
+Ne = round(Int, DOF / (N+1))
+filename = "compare_p" * string(N) * "_N" * string(Ne)
+f = jldopen(filename * ".jld2", "r+")
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
 include(pwd() * "/unstable_bickley/periodic/vizinanigans2.jl")
 
