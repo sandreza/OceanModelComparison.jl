@@ -57,7 +57,7 @@ function run(; Nh = 128,
                                    sim.model.clock.iteration, sim.model.clock.time,
                                    sim.Δt.Δt, maximum(abs, u.data.parent)))
 
-    wizard = TimeStepWizard(cfl=1.0, Δt=1e-4, max_change=1.1, max_Δt=10.0)
+    wizard = TimeStepWizard(cfl=1.0, Δt=1e-1, max_change=1.1, max_Δt=10.0)
 
     simulation = Simulation(model, Δt=wizard, stop_time=stop_time,
                             iteration_interval=10, progress=progress)
@@ -65,34 +65,19 @@ function run(; Nh = 128,
     # Output: primitive fields + computations
     u, v, w, c = primitives = merge(model.velocities, model.tracers)
 
-    ω   = ComputedField( ∂x(v) - ∂y(u)      )
-    ω²  = ComputedField( (∂x(v) - ∂y(u))^2  )
-    c²  = ComputedField( c^2                )
-
-    ∇c² = @at (Cell, Cell, Cell) ∂x(c)^2 + ∂y(c)^2
-    ∇c² = ComputedField(∇c²)
-
-    computations = (ω=ω, ω²=ω², c²=c², ∇c²=∇c²)
-    outputs = merge(primitives, computations)
+   
+    outputs = primitives
 
     save_grid = (file, model) -> file["serialized/grid"] = model.grid
 
     simulation.output_writers[:fields] =
-        JLD2OutputWriter(model, merge(model.velocities, model.tracers, (ω=ω, ∇c²=∇c²)),
+        JLD2OutputWriter(model, merge(model.velocities, model.tracers),
                                 schedule = TimeInterval(output_time_interval),
                                 init = save_grid,
                                 prefix = name * "_fields",
                                 force = true)
 
-    averages = Dict(name => mean(ϕ, dims=(1, 2, 3))
-                    for (name, ϕ) in zip(keys(computations), values(computations)))
 
-    simulation.output_writers[:averages] =
-        JLD2OutputWriter(model, averages,
-                         schedule = TimeInterval(output_time_interval),
-                         init = save_grid,
-                         prefix = name * "_statistics",
-                         force = true)
 
     @info "Running a simulation of an unstable Bickley jet with $(Nh)² degrees of freedom..."
 
@@ -128,17 +113,16 @@ function visualize(name, contours=false)
 
     iterations = parse.(Int, keys(fields_file["timeseries/t"]))
     grid = fields_file["serialized/grid"]
-
+    #=
     xu, yu, zu = nodes((Face, Cell, Cell), grid)
     xω, yω, zω = nodes((Face, Face, Cell), grid)
     xc, yc, zc = nodes((Cell, Cell, Cell), grid)
-
+    =#
     anim = @animate for (i, iteration) in enumerate(iterations)
 
         @info "    Plotting frame $i from iteration $iteration..."
         
         t = fields_file["timeseries/t/$iteration"]
-        ω = fields_file["timeseries/ω/$iteration"][:, :, 1]
         u = fields_file["timeseries/u/$iteration"][:, :, 1]
         c = fields_file["timeseries/c/$iteration"][:, :, 1]
 
@@ -155,16 +139,14 @@ function visualize(name, contours=false)
         plotter = contours ? contourf : heatmap
 
         u_plot = plotter(xu, yu, clamp.(u, -1, 1)'; color = :balance, kwargs...)
-        ω_plot = plotter(xω, yω, clamp.(ω, -1, 1)'; color = :balance, kwargs...)
-        c_plot = plotter(xc, yc, clamp.(c, -1, 1)'; color = :thermal, kwargs...)
+        c_plot = plotter(xc, yc, clamp.(c, -1, 1)'; color = :balance, kwargs...)
 
         u_title = @sprintf("u at t = %.1f", t)
-        ω_title = @sprintf("ω at t = %.1f", t)
         c_title = @sprintf("c at t = %.1f", t)
 
-        plot(u_plot, ω_plot, c_plot,
-             title = [u_title ω_title c_title],
-             layout = (1, 3),
+        plot(u_plot, c_plot,
+             title = [u_title c_title],
+             layout = (1, 2),
              size = (1600, 400))
     end
 
@@ -172,12 +154,84 @@ function visualize(name, contours=false)
 
     return nothing
 end
+##
+Nh = 128
+advection = WENO5()
 
-for Nh in (512, 1024)
+tic = time()
+name = run(Nh=Nh, advection=advection)
+toc = time()
+println(toc - tic)
+##
+fields_file = jldopen(name * "_fields.jld2")
+
+iterations = parse.(Int, keys(fields_file["timeseries/t"]))
+grid = fields_file["serialized/grid"]
+ct = zeros(Nh, Nh, length(iterations))
+for (i, iteration) in enumerate(iterations) 
+        ct[:,:,i] = fields_file["timeseries/c/$iteration"][:, :, 1]
+end
+
+##
+comparewith = false # need to run roeviz.jl first for comparison
+using GLMakie
+resolution = (2404, 1308)
+interpolate = true
+scene, layout = layoutscene(resolution = resolution )
+lscene = layout[2:4,2:4] = LScene(scene)
+if comparewith
+lscene2 = layout[2:4,5:7] = LScene(scene)
+end
+layout[1,1] = LText(scene, "θ, DOF = $(Nh)^2", textsize = 50)
+layout[1,2:4] = LText(scene, "Oceananigans", textsize = 50)
+if comparewith
+layout[1,5:7] = LText(scene, "Climate Machine", textsize = 50)
+end
+time_slider = LSlider(scene, range = Int.(range(1, 100, length=100)), startvalue = 1)
+time_node = time_slider.value
+
+estate = @lift(ct[:,:,$time_node + 1])
+clims = (-1,1)
+heatmap1 = GLMakie.heatmap!(lscene, 0..1, 0..1, estate, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
+
+if comparewith
+estate2 = @lift(oiroestates[2][:,:,$time_node])
+clims = (-1,1)
+heatmap1 = GLMakie.heatmap!(lscene2, 0..1, 0..1, estate2, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
+end
+
+cbar = LColorbar(scene, heatmap1)
+cbar.height = Relative(1/3)
+cbar.width = Relative(1/3)
+cbar.halign = :left
+cbar.labelsize = 50
+
+slidertext = @lift("Time t = " * string(2 *  $time_node))
+layout[2:4, 1] = vgrid!(
+    LText(scene, slidertext, width = nothing),
+    time_slider,
+    cbar,
+)
+display(scene)
+##
+seconds = 15
+fps = 10
+frames = round(Int, fps * seconds )
+record(scene, pwd() * "/oceanan.mp4"; framerate = fps) do io
+    for i = 1:frames
+        sleep(1/fps)
+        recordframe!(io)
+    end
+end
+
+##
+#=
+for Nh in (128)
     #for advection in (CenteredSecondOrder(), CenteredFourthOrder(), UpwindBiasedThirdOrder(), UpwindBiasedFifthOrder(), WENO5())
     for advection in (WENO5(),)
         name = run(Nh=Nh, advection=advection)
-        analyze(name)
+        # analyze(name)
         visualize(name)
     end
 end
+=#

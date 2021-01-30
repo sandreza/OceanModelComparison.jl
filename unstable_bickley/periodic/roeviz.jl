@@ -18,7 +18,7 @@ states = []
 estates = []
 istates = []
 oiroestates = []
-for N in 1:4
+for N in [1,2,3, 4]
 Ne = round(Int, DOF / (N+1))
 filename = "compare_p" * string(N) * "_N" * string(Ne)
 climatemachine = jldopen(filename * ".jld2", "r+")
