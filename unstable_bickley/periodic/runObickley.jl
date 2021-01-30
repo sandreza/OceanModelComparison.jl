@@ -329,8 +329,8 @@ states = [ρ, ρu, ρv, ρθ]
 statenames = ["ρ", "ρu", "ρv", "ρθ"]
 scene = volumeslice(states, statenames = statenames)
 ##
-seconds = 5
-fps = 30
+seconds = 10
+fps = 10
 frames = round(Int, fps * seconds )
 record(scene, pwd() * "/roe_overint.mp4"; framerate = fps) do io
     for i = 1:frames

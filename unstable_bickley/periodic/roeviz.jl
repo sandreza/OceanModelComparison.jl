@@ -12,7 +12,7 @@ using LinearAlgebra
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
 include(pwd() * "/unstable_bickley/periodic/vizinanigans2.jl")
 
-DOF = 32
+DOF = 128
 
 states = []
 estates = []
@@ -53,8 +53,8 @@ xC, yC, zC = cellcenters(dg_grid)
 oix, oiy, oiz = coordinates(oi_grid)
 oiϕ = ScalarField(copy(oix), oigridhelper)
 
-newx = range(-2π, 2π, length = 64)
-newy = range(-2π, 2π, length = 64)
+newx = range(-2π, 2π, length = DOF * 2)
+newy = range(-2π, 2π, length = DOF * 2)
 ρθ = zeros(length(newx), length(newy), 100)
 e_ρθ = zeros(length(newx), length(newy), 100)
 oi_ρθ = zeros(length(newx), length(newy), 100)
@@ -87,18 +87,18 @@ close(oiroe)
 end
 
 ##
-resolution = (1956+400, 852)
+resolution = (2404, 1308)
 interpolate = false
 scene, layout = layoutscene(resolution = resolution )
-lscene = layout[2:4,2:4] = LScene(scene)
-lscene2 = layout[2:4, 5:7] = LScene(scene)
-lscene3 = layout[5:7, 2:4] = LScene(scene)
-lscene4 = layout[5:7, 5:7] = LScene(scene)
+lscene = layout[2:4,3:5] = LScene(scene)
+lscene2 = layout[2:4, 6:8] = LScene(scene)
+lscene3 = layout[5:7, 3:5] = LScene(scene)
+lscene4 = layout[5:7, 6:8] = LScene(scene)
 
-layout[1, 2:4] = LText(scene, "Rusanov", textsize = 50)
-# layout[1, 5:7] = LText(scene, "Rusanov", textsize = 50)
-# layout[1, 8:10] = LText(scene, "Overintegration", textsize = 50)
-# layout[1, 11:13] = LText(scene, "Underintegration", textsize = 50)
+layout[1, 3:5] = LText(scene, "Rusanov", textsize = 50)
+layout[1, 6:8] = LText(scene, "Roe", textsize = 50)
+layout[3, 2] = LText(scene, "Underintegration", textsize = 50)
+layout[6, 2] = LText(scene, "Overintegration", textsize = 50)
 layout[1,1] = LText(scene, "ρθ, DOF = $(DOF)^2", textsize = 50)
 time_slider = LSlider(scene, range = Int.(range(1, 100, length=100)), startvalue = 1)
 time_node = time_slider.value
@@ -154,7 +154,7 @@ cbar.halign = :left
 cbar.labelsize = 50
 
 slidertext = @lift("Time t = " * string(2 *  $time_node))
-layout[2:4, 1] = vgrid!(
+layout[2:6, 1] = vgrid!(
     LText(scene, slidertext, width = nothing),
     time_slider,
     cbar,
@@ -162,3 +162,14 @@ layout[2:4, 1] = vgrid!(
     LText(scene, "bottom left p=3, bottom right p=4"),
 )
 display(scene)
+
+##
+seconds = 15
+fps = 10
+frames = round(Int, fps * seconds )
+record(scene, pwd() * "/roe_overint.mp4"; framerate = fps) do io
+    for i = 1:frames
+        sleep(1/fps)
+        recordframe!(io)
+    end
+end
