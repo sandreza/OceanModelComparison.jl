@@ -123,6 +123,7 @@ function run_bickley_jet(params; filename = "example")
         model,
         grid,
         RusanovNumericalFlux(),
+        # RoeNumericalFlux(),
         CentralNumericalFluxSecondOrder(),
         CentralNumericalFluxGradient(),
     )
@@ -237,9 +238,11 @@ vtkpath = abspath(joinpath(ClimateMachine.Settings.output_dir, "vtk_bickley_jet"
 tic = time()
 
 effective_node_spacing(Ne, Np, Lx=4π) = Lx / (Ne * (Np + 1)^2)
-N = 1
-Nint = N+1
-DOF = 128
+for N in [2,3,4]
+    for DOF in [32]
+# N = 4
+Nint = N + 1
+# DOF = 128
 Ne = round(Int, DOF / (N+1))
 Nˣ = Ne
 Nʸ = Ne
@@ -263,7 +266,7 @@ grid = DiscontinuousSpectralElementGrid(
     polynomialorder = Nint,
 )
 Δx =  min_node_distance(grid)
-cfl = 0.3
+cfl = 0.3 /2
 dt = cfl * Δx / √10
 # run
 timeend = FT(200) # s
@@ -273,6 +276,7 @@ dt = 2 / nout
 params = (; N, Nˣ, Nʸ, Lˣ, Lʸ, dt, nout, timeend, Nint)
 
 filename = "overint_p" * string(N) * "_N" * string(Ne)
+# filename = "roe_overint_p" * string(N) * "_N" * string(Ne)
 dgmodel = run_bickley_jet(params, filename = filename)
 
 toc = time()
@@ -281,10 +285,13 @@ f = jldopen(filename * ".jld2", "a+")
 f["6threadsimulationtime"] = toc - tic
 f["iop"] = Nint
 close(f)
+    end
+end
 ##
 N = 4
-DOF = 128
+DOF = 32
 Ne = round(Int, DOF / (N+1))
+# filename = "roe_overint_p" * string(N) * "_N" * string(Ne)
 filename = "overint_p" * string(N) * "_N" * string(Ne)
 f = jldopen(filename * ".jld2", "r+")
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
@@ -296,8 +303,8 @@ x, y, z = coordinates(dg_grid)
 xC, yC, zC = cellcenters(dg_grid)
 ϕ =  ScalarField(copy(x), gridhelper)
 
-newx = range(-2π, 2π, length = 128 )
-newy = range(-2π, 2π, length = 128 )
+newx = range(-2π, 2π, length = DOF * 2 )
+newy = range(-2π, 2π, length = DOF * 2 )
 ##
 ρ  = zeros(length(newx), length(newy), 101)
 ρu = zeros(length(newx), length(newy), 101)
@@ -321,3 +328,13 @@ println("time to interpolate is $(toc-tic)")
 states = [ρ, ρu, ρv, ρθ]
 statenames = ["ρ", "ρu", "ρv", "ρθ"]
 scene = volumeslice(states, statenames = statenames)
+##
+seconds = 5
+fps = 30
+frames = round(Int, fps * seconds )
+record(scene, pwd() * "/roe_overint.mp4"; framerate = fps) do io
+    for i = 1:frames
+        sleep(1/fps)
+        recordframe!(io)
+    end
+end

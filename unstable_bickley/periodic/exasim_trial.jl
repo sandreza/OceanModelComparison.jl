@@ -12,7 +12,7 @@ using LinearAlgebra
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
 include(pwd() * "/unstable_bickley/periodic/vizinanigans2.jl")
 
-DOF = 128
+DOF = 32
 
 states = []
 estates = []
@@ -52,8 +52,8 @@ xC, yC, zC = cellcenters(dg_grid)
 oix, oiy, oiz = coordinates(oi_grid)
 oiϕ = ScalarField(copy(oix), oigridhelper)
 
-newx = range(-2π, 2π, length = 128)
-newy = range(-2π, 2π, length = 128)
+newx = range(-2π, 2π, length = 64)
+newy = range(-2π, 2π, length = 64)
 ρθ = zeros(length(newx), length(newy), 100)
 e_ρθ = zeros(length(newx), length(newy), 100)
 oi_ρθ = zeros(length(newx), length(newy), 100)
@@ -82,6 +82,7 @@ end
 
 ##
 resolution = (1956+400, 852)
+interpolate = false
 scene, layout = layoutscene(resolution = resolution )
 lscene = layout[2:4,2:4] = LScene(scene)
 lscene2 = layout[2:4, 5:7] = LScene(scene)
@@ -99,10 +100,10 @@ estate2 = @lift(estates[2][:,:,$time_node])
 estate3 = @lift(estates[3][:,:,$time_node])
 estate4 = @lift(estates[4][:,:,$time_node])
 clims = (-1,1)
-heatmap1 = heatmap!(lscene, 0..1, 1..2, estate1, colorrange = clims, colormap = to_colormap(:balance))
-heatmap!(lscene, 1..2, 1..2, estate2, colorrange = clims, colormap = to_colormap(:balance))
-heatmap!(lscene, 0..1, 0..1, estate3, colorrange = clims, colormap = to_colormap(:balance))
-heatmap!(lscene, 1..2, 0..1, estate4, colorrange = clims, colormap = to_colormap(:balance))
+heatmap1 = heatmap!(lscene, 0..1, 1..2, estate1, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
+heatmap!(lscene, 1..2, 1..2, estate2, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
+heatmap!(lscene, 0..1, 0..1, estate3, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
+heatmap!(lscene, 1..2, 0..1, estate4, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
 
 # ClimateMachine
 state1 = @lift(states[1][:,:,$time_node])
@@ -110,10 +111,10 @@ state2 = @lift(states[2][:,:,$time_node])
 state3 = @lift(states[3][:,:,$time_node])
 state4 = @lift(states[4][:,:,$time_node])
 clims = (-1,1)
-heatmap1 = heatmap!(lscene2, 0..1, 1..2, state1, colorrange = clims, colormap = to_colormap(:balance))
-heatmap!(lscene2, 1..2, 1..2, state2, colorrange = clims, colormap = to_colormap(:balance))
-heatmap!(lscene2, 0..1, 0..1, state3, colorrange = clims, colormap = to_colormap(:balance))
-heatmap!(lscene2, 1..2, 0..1, state4, colorrange = clims, colormap = to_colormap(:balance))
+heatmap1 = heatmap!(lscene2, 0..1, 1..2, state1, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
+heatmap!(lscene2, 1..2, 1..2, state2, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
+heatmap!(lscene2, 0..1, 0..1, state3, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
+heatmap!(lscene2, 1..2, 0..1, state4, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
 
 # Overintegration
 istate1 = @lift(istates[1][:,:,$time_node])
@@ -121,10 +122,10 @@ istate2 = @lift(istates[2][:,:,$time_node])
 istate3 = @lift(istates[3][:,:,$time_node])
 istate4 = @lift(istates[4][:,:,$time_node])
 clims = (-1,1)
-heatmap1 = heatmap!(lscene3, 0..1, 1..2, istate1, colorrange = clims, colormap = to_colormap(:balance))
-heatmap!(lscene3, 1..2, 1..2, istate2, colorrange = clims, colormap = to_colormap(:balance))
-heatmap!(lscene3, 0..1, 0..1, istate3, colorrange = clims, colormap = to_colormap(:balance))
-heatmap!(lscene3, 1..2, 0..1, istate4, colorrange = clims, colormap = to_colormap(:balance))
+heatmap1 = heatmap!(lscene3, 0..1, 1..2, istate1, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
+heatmap!(lscene3, 1..2, 1..2, istate2, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
+heatmap!(lscene3, 0..1, 0..1, istate3, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
+heatmap!(lscene3, 1..2, 0..1, istate4, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
 
 cbar = LColorbar(scene, heatmap1)
 cbar.height = Relative(1/3)

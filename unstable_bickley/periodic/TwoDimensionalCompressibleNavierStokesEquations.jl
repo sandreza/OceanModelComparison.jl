@@ -2,10 +2,9 @@ module TwoDimensionalCompressibleNavierStokes
 
 export TwoDimensionalCompressibleNavierStokesEquations
 
+using Test
 using StaticArrays
-using ClimateMachine.MPIStateArrays: MPIStateArray
-using LinearAlgebra: dot, Diagonal
-
+using LinearAlgebra: dot, Diagonal, eigen
 
 using ClimateMachine.Ocean
 using ClimateMachine.VariableTemplates
@@ -14,6 +13,8 @@ using ClimateMachine.DGMethods
 using ClimateMachine.DGMethods.NumericalFluxes
 using ClimateMachine.BalanceLaws
 using ClimateMachine.Ocean: kinematic_stress, coriolis_parameter
+using ClimateMachine.Mesh.Geometry: LocalGeometry
+using ClimateMachine.MPIStateArrays: MPIStateArray
 
 import ClimateMachine.BalanceLaws:
     vars_state,
@@ -32,8 +33,7 @@ import ClimateMachine.Ocean:
     ocean_init_aux!,
     ocean_boundary_state!,
     _ocean_boundary_state!
-
-using ClimateMachine.Mesh.Geometry: LocalGeometry
+import ClimateMachine.NumericalFluxes: numerical_flux_first_order!
 
 ×(a::SVector, b::SVector) = StaticArrays.cross(a, b)
 ⋅(a::SVector, b::SVector) = StaticArrays.dot(a, b)
@@ -379,6 +379,127 @@ linear_drag!(::CNSE2D, ::ConstantViscosity, _...) = nothing
 end
 
 @inline wavespeed(m::CNSE2D, _...) = m.c
+
+roe_average(ρ⁻, ρ⁺, var⁻, var⁺) =
+    (sqrt(ρ⁻) * var⁻ + sqrt(ρ⁺) * var⁺) / (sqrt(ρ⁻) + sqrt(ρ⁺))
+
+function numerical_flux_first_order!(
+    ::RoeNumericalFlux,
+    model::CNSE2D,
+    fluxᵀn::Vars{S},
+    n⁻::SVector,
+    state⁻::Vars{S},
+    aux⁻::Vars{A},
+    state⁺::Vars{S},
+    aux⁺::Vars{A},
+    t,
+    direction,
+) where {S, A}
+    numerical_flux_first_order!(
+        CentralNumericalFluxFirstOrder(),
+        model,
+        fluxᵀn,
+        n⁻,
+        state⁻,
+        aux⁻,
+        state⁺,
+        aux⁺,
+        t,
+        direction,
+    )
+
+    FT = eltype(fluxᵀn)
+
+    # constants and normal vectors
+    g = model.g
+    @inbounds nˣ = n⁻[1]
+    @inbounds nʸ = n⁻[2]
+
+    # get minus side states
+    ρ⁻ = state⁻.ρ
+    @inbounds ρu⁻ = state⁻.ρu[1]
+    @inbounds ρv⁻ = state⁻.ρu[2]
+    ρθ⁻ = state⁻.ρθ
+
+    u⁻ = ρu⁻ / ρ⁻
+    v⁻ = ρv⁻ / ρ⁻
+    θ⁻ = ρθ⁻ / ρ⁻
+
+    # get plus side states
+    ρ⁺ = state⁺.ρ
+    @inbounds ρu⁺ = state⁺.ρu[1]
+    @inbounds ρv⁺ = state⁺.ρu[2]
+    ρθ⁺ = state⁺.ρθ
+
+    u⁺ = ρu⁺ / ρ⁺
+    v⁺ = ρv⁺ / ρ⁺
+    θ⁺ = ρθ⁺ / ρ⁺
+
+    # averages for roe fluxes
+    ρ = (ρ⁺ + ρ⁻) / 2
+    ρu = (ρu⁺ + ρu⁻) / 2
+    ρv = (ρv⁺ + ρv⁻) / 2
+    ρθ = (ρθ⁺ + ρθ⁻) / 2
+
+    u = roe_average(ρ⁻, ρ⁺, u⁻, u⁺)
+    v = roe_average(ρ⁻, ρ⁺, v⁻, v⁺)
+    θ = roe_average(ρ⁻, ρ⁺, θ⁻, θ⁺)
+
+    # normal and tangent velocities
+    uₙ = nˣ * u + nʸ * v
+    uₚ = nˣ * v - nʸ * u
+
+    # differences for difference vector
+    Δρ = ρ⁺ - ρ⁻
+    Δρu = ρu⁺ - ρu⁻
+    Δρv = ρv⁺ - ρv⁻
+    Δρθ = ρθ⁺ - ρθ⁻
+
+    Δφ = @SVector [Δρ, Δρu, Δρv, Δρθ]
+
+    """
+    # jacobian
+    ∂F∂φ = [
+        0 nˣ nʸ 0
+        (nˣ * c^2 - u * uₙ) (uₙ + nˣ * u) (nʸ * u) 0
+        (nʸ * c^2 - v * uₙ) (nˣ * v) (uₙ + nʸ * v) 0
+        (-θ * uₙ) (nˣ * θ) (nʸ * θ) uₙ
+    ]
+    # eigen decomposition
+    λ, R = eigen(∂F∂φ)
+    """
+
+    # eigen values matrix
+    c = sqrt(g * ρ)
+    λ = @SVector [uₙ, uₙ + c, uₙ - c, uₙ]
+    Λ = Diagonal(abs.(λ))
+
+
+    # eigenvector matrix
+    R = @SMatrix [
+        0 1 1 0
+        nʸ (u + nˣ * c) (u - nˣ * c) 0
+        -nˣ (v + nʸ * c) (v - nʸ * c) 0
+        0 θ θ 1
+    ]
+
+    # inverse of eigenvector matrix
+
+    R⁻¹ =
+        1 / (2c) * @SMatrix [
+            (2c * uₚ) (2c * nʸ) (-2c * nˣ) 0
+            -(uₙ - c) nˣ nʸ 0
+            (uₙ + c) -nˣ -nʸ 0
+            -θ 0 0 1
+        ]
+    # @test R⁻¹ * R ≈ 1
+
+    # actually calculate flux
+    # parent(fluxᵀn) .-= R * Λ * (R \ Δφ) / 2
+    parent(fluxᵀn) .-= R * Λ * R⁻¹ * Δφ / 2
+
+    return nothing
+end
 
 boundary_conditions(model::CNSE2D) = model.boundary_conditions
 
