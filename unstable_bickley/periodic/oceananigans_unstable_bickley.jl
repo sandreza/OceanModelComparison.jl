@@ -183,8 +183,9 @@ if comparewith
 lscene2 = layout[2:4,5:7] = LScene(scene)
 end
 layout[1,1] = LText(scene, "θ, DOF = $(Nh)^2", textsize = 50)
-layout[1,2:4] = LText(scene, "Oceananigans", textsize = 50)
+
 if comparewith
+    layout[1,2:4] = LText(scene, "Oceananigans", textsize = 50)
 layout[1,5:7] = LText(scene, "Climate Machine", textsize = 50)
 end
 time_slider = LSlider(scene, range = Int.(range(1, 100, length=100)), startvalue = 1)
@@ -195,10 +196,12 @@ clims = (-1,1)
 heatmap1 = GLMakie.heatmap!(lscene, 0..1, 0..1, estate, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
 
 if comparewith
-estate2 = @lift(oiroestates[2][:,:,$time_node])
+estate2 = @lift(oiroestates[4][:,:,$time_node])
 clims = (-1,1)
 heatmap1 = GLMakie.heatmap!(lscene2, 0..1, 0..1, estate2, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
 end
+estate2 = @lift(oiroestates[4][:,:,$time_node])
+heatmap1 = GLMakie.heatmap!(lscene, 1..2, 0..1, estate2, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
 
 cbar = LColorbar(scene, heatmap1)
 cbar.height = Relative(1/3)
@@ -217,7 +220,7 @@ display(scene)
 seconds = 15
 fps = 10
 frames = round(Int, fps * seconds )
-record(scene, pwd() * "/oceanan.mp4"; framerate = fps) do io
+record(scene, pwd() * "/sideby.mp4"; framerate = fps) do io
     for i = 1:frames
         sleep(1/fps)
         recordframe!(io)
