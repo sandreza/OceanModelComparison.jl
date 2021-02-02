@@ -90,8 +90,8 @@ function run_bickley_jet(params; filename = "example")
     yrange = range(-params.Lʸ / 2; length = params.Nʸ + 1, stop = params.Lʸ / 2)
     zrange = range(-params.Lᶻ / 2; length = params.Nᶻ + 1, stop = params.Lᶻ / 2)
 
-    brickrange = (xrange, yrange)
-    topl = BrickTopology(
+    brickrange = (xrange, yrange, zrange)
+    topl = StackedBrickTopology(
         mpicomm,
         brickrange,
         periodicity = (true, true, true),
@@ -234,12 +234,12 @@ end
 
 ## Run
 FT = Float64
-
+vtkpath = abspath(joinpath(ClimateMachine.Settings.output_dir, "vtk_bickley_jet"))
 effective_node_spacing(Ne, Np, Lx=4π) = Lx / (Ne * (Np + 1)^2)
-for N in [1]
-    for DOF in [128]
+for N in [1,2,3,4]
+    for DOF in [32]
 # N = 4
-Nint = N + 1
+Nint = N + 0
 # DOF = 128
 Ne = round(Int, DOF / (N+1))
 Nˣ = Ne
@@ -251,14 +251,14 @@ Lᶻ = 4 * FT(π)  # m
 # grid
 xrange = range(-Lˣ / 2; length = Nˣ + 1, stop = Lˣ / 2)
 yrange = range(-Lʸ / 2; length = Nʸ + 1, stop = Lʸ / 2)
-yrange = range(-Lᶻ / 2; length = Nʸ + 1, stop = Lᶻ / 2)
+zrange = range(-Lᶻ / 2; length = Nʸ + 1, stop = Lᶻ / 2)
 mpicomm = MPI.COMM_WORLD
 brickrange = (xrange, yrange, zrange)
 topl = StackedBrickTopology(
     mpicomm,
     brickrange,
-    periodicity = (true, true),
-    boundary = ((0, 0), (0, 0)),
+    periodicity = (true, true, true),
+    boundary = ((0, 0), (0, 0), (0,0)),
 )
 grid = DiscontinuousSpectralElementGrid(
     topl,
@@ -274,9 +274,10 @@ timeend = FT(200) # s
 nout = round(Int, 2 / dt)
 dt = 2 / nout
 
-params = (; N, Nˣ, Nʸ, Nᶻ, Lˣ, Lʸ, Lᶻ dt, nout, timeend, Nint)
+params = (; N, Nˣ, Nʸ, Nᶻ, Lˣ, Lʸ, Lᶻ, dt, nout, timeend, Nint)
 
-# filename = "overint_p" * string(N) * "_N" * string(Ne)
+# filename = "3D_overint_p" * string(N) * "_N" * string(Ne)
+filename = "3D_compare_p" * string(N) * "_N" * string(Ne)
 # filename = "roe_overint_p" * string(N) * "_N" * string(Ne)
 # filename = "roe_p" * string(N) * "_N" * string(Ne)
 # filename = "deletemeagain"
@@ -292,3 +293,52 @@ f["iop"] = Nint
 close(f)
     end
 end
+
+##
+N = 4
+DOF = 32
+Ne = round(Int, DOF / (N+1))
+# filename = "3D_overint_p" * string(N) * "_N" * string(Ne)
+filename = "3D_compare_p" * string(N) * "_N" * string(Ne)
+# filename = "overint_p" * string(N) * "_N" * string(Ne)
+f = jldopen(filename * ".jld2", "r+")
+include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
+include(pwd() * "/unstable_bickley/periodic/vizinanigans2.jl")
+
+dg_grid = f["grid"]
+gridhelper = GridHelper(dg_grid)   
+x, y, z = coordinates(dg_grid)
+xC, yC, zC = cellcenters(dg_grid)
+ϕ =  ScalarField(copy(x), gridhelper)
+
+newx = range(-2π, 2π, length = DOF * 2 )
+newy = range(-2π, 2π, length = DOF * 2 )
+newz = range(-2π, 2π, length = 6 )
+##
+ρ  = zeros(length(newx), length(newy), length(newz), 101)
+ρu = zeros(length(newx), length(newy), length(newz), 101)
+ρv = zeros(length(newx), length(newy), length(newz), 101)
+ρw = zeros(length(newx), length(newy), length(newz), 101)
+ρθ = zeros(length(newx), length(newy), length(newz), 101)
+tic = time()
+for i in 0:100
+    Q = f[string(i)]
+    ϕ .= Q[:,1,:]
+    ρ[:,:,:, i+1]  = ϕ(newx, newy, newz)
+    ϕ .= Q[:,2,:]
+    ρu[:,:,:, i+1] = ϕ(newx, newy, newz)
+    ϕ .= Q[:,3,:]
+    ρv[:,:,:, i+1] = ϕ(newx, newy, newz)
+    ϕ .= Q[:,4,:]
+    ρw[:,:,:, i+1] = ϕ(newx, newy, newz)
+    ϕ .= Q[:,5,:]
+    ρθ[:,:,:, i+1] = ϕ(newx, newy, newz)
+end
+toc = time()
+close(f)
+println("time to interpolate is $(toc-tic)")
+##
+ind = 19
+states = [ρ[:,:,:,ind], ρu[:,:,:,ind], ρv[:,:,:,ind], ρw[:,:,:,ind], ρθ[:,:,:,ind]]
+statenames = ["ρ", "ρu", "ρv", "ρw", "ρθ"]
+scene = volumeslice(states, statenames = statenames)
