@@ -155,7 +155,7 @@ function visualize(name, contours=false)
     return nothing
 end
 ##
-Nh = 128
+Nh = 32
 advection = WENO5()
 
 tic = time()
@@ -200,7 +200,7 @@ estate2 = @lift(oiroestates[4][:,:,$time_node])
 clims = (-1,1)
 heatmap1 = GLMakie.heatmap!(lscene2, 0..1, 0..1, estate2, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
 end
-estate2 = @lift(oiroestates[4][:,:,$time_node])
+estate2 = @lift(oiroestates[2][:,:,$time_node])
 heatmap1 = GLMakie.heatmap!(lscene, 1..2, 0..1, estate2, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
 
 cbar = LColorbar(scene, heatmap1)

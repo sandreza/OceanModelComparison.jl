@@ -122,8 +122,8 @@ function run_bickley_jet(params; filename = "example")
     dg = DGModel(
         model,
         grid,
-        RusanovNumericalFlux(),
-        # RoeNumericalFlux(),
+        # RusanovNumericalFlux(),
+        RoeNumericalFlux(),
         CentralNumericalFluxSecondOrder(),
         CentralNumericalFluxGradient(),
     )
@@ -235,11 +235,11 @@ end
 #################
 FT = Float64
 vtkpath = abspath(joinpath(ClimateMachine.Settings.output_dir, "vtk_bickley_jet"))
-tic = time()
+
 
 effective_node_spacing(Ne, Np, Lx=4π) = Lx / (Ne * (Np + 1)^2)
-for N in [2,3,4]
-    for DOF in [32]
+for N in [1]
+    for DOF in [128]
 # N = 4
 Nint = N + 1
 # DOF = 128
@@ -275,10 +275,13 @@ dt = 2 / nout
 
 params = (; N, Nˣ, Nʸ, Lˣ, Lʸ, dt, nout, timeend, Nint)
 
-filename = "overint_p" * string(N) * "_N" * string(Ne)
+# filename = "overint_p" * string(N) * "_N" * string(Ne)
 # filename = "roe_overint_p" * string(N) * "_N" * string(Ne)
+# filename = "roe_p" * string(N) * "_N" * string(Ne)
+# filename = "deletemeagain"
+# filename = "compare_p" * string(N) * "_N" * string(Ne)
+tic = time()
 dgmodel = run_bickley_jet(params, filename = filename)
-
 toc = time()
 println("The amount of time for the simulation is ", toc - tic)
 f = jldopen(filename * ".jld2", "a+")
@@ -291,8 +294,8 @@ end
 N = 4
 DOF = 32
 Ne = round(Int, DOF / (N+1))
-# filename = "roe_overint_p" * string(N) * "_N" * string(Ne)
-filename = "overint_p" * string(N) * "_N" * string(Ne)
+filename = "roe_overint_p" * string(N) * "_N" * string(Ne)
+# filename = "overint_p" * string(N) * "_N" * string(Ne)
 f = jldopen(filename * ".jld2", "r+")
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
 include(pwd() * "/unstable_bickley/periodic/vizinanigans2.jl")
@@ -329,12 +332,3 @@ states = [ρ, ρu, ρv, ρθ]
 statenames = ["ρ", "ρu", "ρv", "ρθ"]
 scene = volumeslice(states, statenames = statenames)
 ##
-seconds = 10
-fps = 10
-frames = round(Int, fps * seconds )
-record(scene, pwd() * "/roe_overint.mp4"; framerate = fps) do io
-    for i = 1:frames
-        sleep(1/fps)
-        recordframe!(io)
-    end
-end

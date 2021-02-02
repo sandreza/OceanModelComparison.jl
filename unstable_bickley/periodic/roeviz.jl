@@ -40,7 +40,7 @@ oiet = oiroe["6threadsimulationtime"]
 println("Rusanov on 6 threads took $(cmt) seconds")
 println("Roe on 6 threads took $(et) seconds")
 println("OI Rusanov on 6threads took $(oicmt) seconds")
-println("OI Roe on 6threads took $(oicmt) seconds")
+println("OI Roe on 6threads took $(oiet) seconds")
 
 oi_grid = oiclimatemachine["grid"]
 oigridhelper = GridHelper(oi_grid)  
