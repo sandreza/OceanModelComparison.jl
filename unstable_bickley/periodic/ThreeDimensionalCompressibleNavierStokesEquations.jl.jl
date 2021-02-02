@@ -475,7 +475,7 @@ function numerical_flux_first_order!(
     # Λ = Diagonal(abs.(λ))
 
 
-    # eigenvector matrix
+    # eigenvector matrix (doesn't work in 3D)
     R = @SMatrix [
      0    0       1            1           0
      nʸ   0   (u + nˣ * c)  (u - nˣ * c)   0
