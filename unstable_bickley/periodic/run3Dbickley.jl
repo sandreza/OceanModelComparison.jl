@@ -123,8 +123,8 @@ function run_bickley_jet(params; filename = "example")
     dg = DGModel(
         model,
         grid,
-        # RusanovNumericalFlux(),
-        RoeNumericalFlux(),
+        RusanovNumericalFlux(),
+        # RoeNumericalFlux(),
         CentralNumericalFluxSecondOrder(),
         CentralNumericalFluxGradient(),
     )
@@ -276,10 +276,10 @@ dt = 2 / nout
 
 params = (; N, Nˣ, Nʸ, Nᶻ, Lˣ, Lʸ, Lᶻ, dt, nout, timeend, Nint)
 
-# filename = "3D_overint_p" * string(N) * "_N" * string(Ne)
+filename = "3D_overint_p" * string(N) * "_N" * string(Ne)
 # filename = "3D_compare_p" * string(N) * "_N" * string(Ne)
 # filename = "3D_roe_overint_p" * string(N) * "_N" * string(Ne)
-filename = "3D_roe_p" * string(N) * "_N" * string(Ne) * "_Nint" * string(Nint)
+# filename = "3D_roe_p" * string(N) * "_N" * string(Ne) * "_Nint" * string(Nint)
 # filename = "deletemeagain"
 # filename = "compare_p" * string(N) * "_N" * string(Ne)
 tic = time()
