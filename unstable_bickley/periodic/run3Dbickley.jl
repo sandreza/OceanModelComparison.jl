@@ -123,8 +123,8 @@ function run_bickley_jet(params; filename = "example")
     dg = DGModel(
         model,
         grid,
-        RusanovNumericalFlux(),
-        # RoeNumericalFlux(),
+        # RusanovNumericalFlux(),
+        RoeNumericalFlux(),
         CentralNumericalFluxSecondOrder(),
         CentralNumericalFluxGradient(),
     )
@@ -236,10 +236,10 @@ end
 FT = Float64
 vtkpath = abspath(joinpath(ClimateMachine.Settings.output_dir, "vtk_bickley_jet"))
 effective_node_spacing(Ne, Np, Lx=4π) = Lx / (Ne * (Np + 1)^2)
-for N in [1,2,3,4]
+for N in [2]
     for DOF in [32]
 # N = 4
-Nint = N + 0
+Nint = N + 1
 # DOF = 128
 Ne = round(Int, DOF / (N+1))
 Nˣ = Ne
@@ -295,11 +295,13 @@ close(f)
 end
 
 ##
-N = 4
+N = 2
 DOF = 32
+Nint = N+1
 Ne = round(Int, DOF / (N+1))
 # filename = "3D_overint_p" * string(N) * "_N" * string(Ne)
-filename = "3D_compare_p" * string(N) * "_N" * string(Ne)
+#filename = "3D_compare_p" * string(N) * "_N" * string(Ne)
+filename = "3D_roe_p" * string(N) * "_N" * string(Ne) * "_Nint" * string(Nint)
 # filename = "overint_p" * string(N) * "_N" * string(Ne)
 f = jldopen(filename * ".jld2", "r+")
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
@@ -338,8 +340,10 @@ toc = time()
 close(f)
 println("time to interpolate is $(toc-tic)")
 ##
-ind = 19
+ind = 100
 states = [ρ[:,:,:,ind], ρu[:,:,:,ind], ρv[:,:,:,ind], ρw[:,:,:,ind], ρθ[:,:,:,ind]]
+
+states = [ρ[:,:,1,:], ρu[:,:,1,:], ρv[:,:,1,:], ρw[:,:,1,:], ρθ[:,:,1,:]]
 statenames = ["ρ", "ρu", "ρv", "ρw", "ρθ"]
 scene = volumeslice(states, statenames = statenames)
 

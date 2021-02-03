@@ -429,7 +429,7 @@ function numerical_flux_first_order!(
     # constructed states
     u⁺ = ρu⁺ / ρ⁺
     θ⁺ = ρθ⁺ / ρ⁺
-    uₙ⁺ = u⁺' * n⁺
+    uₙ⁺ = u⁺' * n⁻
     # in general thermodynamics
     p⁺ = 0.5 * g * (ρ⁺)^2
     c⁺ = sqrt(g * ρ⁺)
@@ -437,6 +437,7 @@ function numerical_flux_first_order!(
     # construct roe averges
     ρ = sqrt(ρ⁻ * ρ⁺)
     u = roe_average(ρ⁻, ρ⁺, u⁻, u⁺)
+    θ = roe_average(ρ⁻, ρ⁺, θ⁻, θ⁺)
     c = roe_average(ρ⁻, ρ⁺, c⁻, c⁺)
     # construct normal velocity
     uₙ = u' * n⁻
