@@ -442,29 +442,30 @@ function numerical_flux_first_order!(
     uₙ = u' * n⁻
 
     # differences
-    Δρ = ρ⁺ - ρ⁻
-    Δp = p⁺ - p⁻
-    Δu = u⁺ - u⁻
+    Δρ  = ρ⁺ - ρ⁻
+    Δp  = p⁺ - p⁻
+    Δu  = u⁺ - u⁻
+    Δρθ = ρθ⁺ - ρθ⁻
     Δuₙ = Δu' * n⁻
 
     # constructed values
-
-    w1 = abs(uₙ - c) * (Δp - ρ * c * Δuₙ) / (2 * c^2)
-    w2 = abs(uₙ + c) * (Δp + ρ * c * Δuₙ) / (2 * c^2)
-    w3 = abs(uₙ) * (Δp - Δp / c^2) 
+    c⁻² = 1/c^2
+    w1 = abs(uₙ - c) * (Δp - ρ * c * Δuₙ) * 0.5 * c⁻²
+    w2 = abs(uₙ + c) * (Δp + ρ * c * Δuₙ) * 0.5 * c⁻²
+    w3 = abs(uₙ) * (Δρ - Δp * c⁻²) 
     w4 = abs(uₙ) * ρ
 
-    fluxᵀn.ρ -= (w1 + w2 + w3) / 2
+    fluxᵀn.ρ -= (w1 + w2 + w3) * 0.5
     fluxᵀn.ρu -=
         (
             w1 * (u - c * n⁻) +
             w2 * (u + c * n⁻) +
             w3 * u +
             w4 * (Δu - Δuₙ * n⁻)
-        ) / 2
+        ) * 0.5
     
-    wt = abs(uₙ) * (Δρθ - θ * Δp / c^2)
-    fluxᵀn.ρθ -= ((w1 + w2) * θ + wt) / 2
+    wt = abs(uₙ) * (Δρθ - θ * Δp * c⁻²)
+    fluxᵀn.ρθ -= ((w1 + w2) * θ + wt) * 0.5
 
     return nothing
 end
