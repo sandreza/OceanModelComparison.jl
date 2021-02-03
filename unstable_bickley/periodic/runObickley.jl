@@ -122,8 +122,8 @@ function run_bickley_jet(params; filename = "example")
     dg = DGModel(
         model,
         grid,
-        # RusanovNumericalFlux(),
-        RoeNumericalFlux(),
+        RusanovNumericalFlux(),
+        # RoeNumericalFlux(),
         CentralNumericalFluxSecondOrder(),
         CentralNumericalFluxGradient(),
     )
@@ -238,10 +238,11 @@ vtkpath = abspath(joinpath(ClimateMachine.Settings.output_dir, "vtk_bickley_jet"
 
 
 effective_node_spacing(Ne, Np, Lx=4π) = Lx / (Ne * (Np + 1)^2)
-for N in [1]
-    for DOF in [128]
+for N in [4]
+    for DOF in [32]
+        for Nint in [5, 6]
 # N = 4
-Nint = N + 1
+# Nint = N + 1
 # DOF = 128
 Ne = round(Int, DOF / (N+1))
 Nˣ = Ne
@@ -263,7 +264,7 @@ grid = DiscontinuousSpectralElementGrid(
     topl,
     FloatType = FT,
     DeviceArray = Array,
-    polynomialorder = Nint,
+    polynomialorder = N,
 )
 Δx =  min_node_distance(grid)
 cfl = 0.3 /2
@@ -280,22 +281,27 @@ params = (; N, Nˣ, Nʸ, Lˣ, Lʸ, dt, nout, timeend, Nint)
 # filename = "roe_p" * string(N) * "_N" * string(Ne)
 # filename = "deletemeagain"
 # filename = "compare_p" * string(N) * "_N" * string(Ne)
+filename = "rusanov_p" * string(N) * "_N" * string(Ne) * "_Nint" * string(Nint)
 tic = time()
 dgmodel = run_bickley_jet(params, filename = filename)
 toc = time()
 println("The amount of time for the simulation is ", toc - tic)
 f = jldopen(filename * ".jld2", "a+")
-f["6threadsimulationtime"] = toc - tic
+f["simulationtime"] = toc - tic
+f["threads"] = Threads.nthreads()
 f["iop"] = Nint
 close(f)
     end
+end
 end
 ##
 N = 4
 DOF = 32
 Ne = round(Int, DOF / (N+1))
-filename = "roe_overint_p" * string(N) * "_N" * string(Ne)
+Nint = 6
+# filename = "roe_overint_p" * string(N) * "_N" * string(Ne)
 # filename = "overint_p" * string(N) * "_N" * string(Ne)
+filename = "rusanov_p" * string(N) * "_N" * string(Ne) * "_Nint" * string(Nint)
 f = jldopen(filename * ".jld2", "r+")
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
 include(pwd() * "/unstable_bickley/periodic/vizinanigans2.jl")
@@ -308,6 +314,7 @@ xC, yC, zC = cellcenters(dg_grid)
 
 newx = range(-2π, 2π, length = DOF * 2 )
 newy = range(-2π, 2π, length = DOF * 2 )
+norm(f["100"])
 ##
 ρ  = zeros(length(newx), length(newy), 101)
 ρu = zeros(length(newx), length(newy), 101)
@@ -317,13 +324,13 @@ tic = time()
 for i in 0:100
     Q = f[string(i)]
     ϕ .= Q[:,1,:]
-    ρ[:,:,i+1]  = ϕ(newx, newy)
+    ρ[:,:,i+1]  = ϕ(newx, newy, threads = true)
     ϕ .= Q[:,2,:]
-    ρu[:,:,i+1] = ϕ(newx, newy)
+    ρu[:,:,i+1] = ϕ(newx, newy, threads = true)
     ϕ .= Q[:,3,:]
-    ρv[:,:,i+1] = ϕ(newx, newy)
+    ρv[:,:,i+1] = ϕ(newx, newy, threads = true)
     ϕ .= Q[:,4,:]
-    ρθ[:,:,i+1] = ϕ(newx, newy)
+    ρθ[:,:,i+1] = ϕ(newx, newy, threads = true)
 end
 toc = time()
 close(f)

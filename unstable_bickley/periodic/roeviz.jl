@@ -12,7 +12,7 @@ using LinearAlgebra
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
 include(pwd() * "/unstable_bickley/periodic/vizinanigans2.jl")
 
-DOF = 128
+DOF = 32
 
 states = []
 estates = []

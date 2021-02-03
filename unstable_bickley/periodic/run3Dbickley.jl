@@ -277,9 +277,9 @@ dt = 2 / nout
 params = (; N, Nˣ, Nʸ, Nᶻ, Lˣ, Lʸ, Lᶻ, dt, nout, timeend, Nint)
 
 # filename = "3D_overint_p" * string(N) * "_N" * string(Ne)
-filename = "3D_compare_p" * string(N) * "_N" * string(Ne)
-# filename = "roe_overint_p" * string(N) * "_N" * string(Ne)
-# filename = "roe_p" * string(N) * "_N" * string(Ne)
+# filename = "3D_compare_p" * string(N) * "_N" * string(Ne)
+# filename = "3D_roe_overint_p" * string(N) * "_N" * string(Ne)
+filename = "3D_roe_p" * string(N) * "_N" * string(Ne) * "_Nint" * string(Nint)
 # filename = "deletemeagain"
 # filename = "compare_p" * string(N) * "_N" * string(Ne)
 tic = time()
@@ -342,3 +342,5 @@ ind = 19
 states = [ρ[:,:,:,ind], ρu[:,:,:,ind], ρv[:,:,:,ind], ρw[:,:,:,ind], ρθ[:,:,:,ind]]
 statenames = ["ρ", "ρu", "ρv", "ρw", "ρθ"]
 scene = volumeslice(states, statenames = statenames)
+
+##

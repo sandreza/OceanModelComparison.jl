@@ -376,6 +376,8 @@ end
 roe_average(ρ⁻, ρ⁺, var⁻, var⁺) =
     (sqrt(ρ⁻) * var⁻ + sqrt(ρ⁺) * var⁺) / (sqrt(ρ⁻) + sqrt(ρ⁺))
 
+
+    # Doesn't work for 3D
 function numerical_flux_first_order!(
     ::RoeNumericalFlux,
     model::CNSE3D,
@@ -405,89 +407,64 @@ function numerical_flux_first_order!(
 
     # constants and normal vectors
     g = model.g
-    @inbounds nˣ = n⁻[1]
-    @inbounds nʸ = n⁻[2]
-    @inbounds nᶻ = n⁻[3]
-
-    # get minus side states
+   
+    # - states
     ρ⁻ = state⁻.ρ
-    @inbounds ρu⁻ = state⁻.ρu[1]
-    @inbounds ρv⁻ = state⁻.ρu[2]
-    @inbounds ρw⁻ = state⁻.ρu[3]
+    ρu⁻ = state⁻.ρu 
     ρθ⁻ = state⁻.ρθ
 
+    # constructed states
     u⁻ = ρu⁻ / ρ⁻
-    v⁻ = ρv⁻ / ρ⁻
-    w⁻ = ρw⁻ / ρ⁻
     θ⁻ = ρθ⁻ / ρ⁻
+    uₙ⁻ = u⁻' * n⁻
+    # in general thermodynamics
+    p⁻ = 0.5 * g * (ρ⁻)^2
+    c⁻ = sqrt(g * ρ⁻)
 
-    # get plus side states
+    # + states
     ρ⁺ = state⁺.ρ
-    @inbounds ρu⁺ = state⁺.ρu[1]
-    @inbounds ρv⁺ = state⁺.ρu[2]
-    @inbounds ρw⁺ = state⁺.ρu[3]
+    ρu⁺ = state⁺.ρu 
     ρθ⁺ = state⁺.ρθ
 
+    # constructed states
     u⁺ = ρu⁺ / ρ⁺
-    v⁺ = ρv⁺ / ρ⁺
-    w⁺ = ρw⁺ / ρ⁺
     θ⁺ = ρθ⁺ / ρ⁺
+    uₙ⁺ = u⁺' * n⁺
+    # in general thermodynamics
+    p⁺ = 0.5 * g * (ρ⁺)^2
+    c⁺ = sqrt(g * ρ⁺)
 
-    # averages for roe fluxes
-    ρ  = (ρ⁺  + ρ⁻) / 2
-    ρu = (ρu⁺ + ρu⁻) / 2
-    ρv = (ρv⁺ + ρv⁻) / 2
-    ρw = (ρw⁺ + ρw⁻) / 2
-    ρθ = (ρθ⁺ + ρθ⁻) / 2
-
+    # construct roe averges
+    ρ = sqrt(ρ⁻ * ρ⁺)
     u = roe_average(ρ⁻, ρ⁺, u⁻, u⁺)
-    v = roe_average(ρ⁻, ρ⁺, v⁻, v⁺)
-    w = roe_average(ρ⁻, ρ⁺, w⁻, w⁺)
-    θ = roe_average(ρ⁻, ρ⁺, θ⁻, θ⁺)
+    c = roe_average(ρ⁻, ρ⁺, c⁻, c⁺)
+    # construct normal velocity
+    uₙ = u' * n⁻
 
-    # normal and tangent velocities
-    uₙ = nˣ * u + nʸ * v + nᶻ * v
-    # uₚ = nˣ * v - nʸ * u
+    # differences
+    Δρ = ρ⁺ - ρ⁻
+    Δp = p⁺ - p⁻
+    Δu = u⁺ - u⁻
+    Δuₙ = Δu' * n⁻
 
-    # differences for difference vector
-    Δρ  = ρ⁺ - ρ⁻
-    Δρu = ρu⁺ - ρu⁻
-    Δρv = ρv⁺ - ρv⁻
-    Δρw = ρw⁺ - ρw⁻
-    Δρθ = ρθ⁺ - ρθ⁻
+    # constructed values
 
-    Δφ = @SVector [Δρ, Δρu, Δρv, Δρw, Δρθ]
+    w1 = abs(uₙ - c) * (Δp - ρ * c * Δuₙ) / (2 * c^2)
+    w2 = abs(uₙ + c) * (Δp + ρ * c * Δuₙ) / (2 * c^2)
+    w3 = abs(uₙ) * (Δp - Δp / c^2) 
+    w4 = abs(uₙ) * ρ
 
-    """
-    # jacobian
-    ∂F∂φ = [
-        0 nˣ nʸ 0
-        (nˣ * c^2 - u * uₙ) (uₙ + nˣ * u) (nʸ * u) 0
-        (nʸ * c^2 - v * uₙ) (nˣ * v) (uₙ + nʸ * v) 0
-        (-θ * uₙ) (nˣ * θ) (nʸ * θ) uₙ
-    ]
-    # eigen decomposition
-    λ, R = eigen(∂F∂φ)
-    """
-
-    # eigen values matrix
-    c = sqrt(g * ρ)
-    λ = @SVector [abs(uₙ), abs(uₙ), abs(uₙ + c), abs(uₙ - c), abs(uₙ)]
-    # Λ = Diagonal(abs.(λ))
-
-
-    # eigenvector matrix (doesn't work in 3D)
-    R = @SMatrix [
-     0    0       1            1           0
-     nʸ   0   (u + nˣ * c)  (u - nˣ * c)   0
-    -nˣ  -nᶻ  (v + nʸ * c)  (v - nʸ * c)   0
-     0    nʸ  (w + nᶻ * c)  (w - nᶻ * c)   0
-     0    0       θ            θ           1
-    ]
-
-    # actually calculate flux
-    parent(fluxᵀn) .-= R * (λ .* (R \ Δφ)) * 0.5
-    # parent(fluxᵀn) .-= R * Λ * R⁻¹ * Δφ / 2
+    fluxᵀn.ρ -= (w1 + w2 + w3) / 2
+    fluxᵀn.ρu -=
+        (
+            w1 * (u - c * n⁻) +
+            w2 * (u + c * n⁻) +
+            w3 * u +
+            w4 * (Δu - Δuₙ * n⁻)
+        ) / 2
+    
+    wt = abs(uₙ) * (Δρθ - θ * Δp / c^2)
+    fluxᵀn.ρθ -= ((w1 + w2) * θ + wt) / 2
 
     return nothing
 end
