@@ -115,12 +115,12 @@ sliced_states = @lift([$sliced_state1, $sliced_state2, $sliced_state3])
 sliced_state = @lift($sliced_states[$directionnode]) 
 
 oclims = @lift((quantile($sliced_state[:], $slicelowerclim_node) , quantile($sliced_state[:], $sliceupperclim_node)))
-slicecolormapnode = @lift($oclims[1] < $oclims[2] ? to_colormap($colornode) : reverse(to_colormap($colornode)))
+slicecolormapnode = @lift($oclims[1] < $oclims[2] ? $colornode : $colornode )
 sliceclims = @lift($oclims[1] != $oclims[2] ? (minimum($oclims), maximum($oclims)) : (minimum($oclims)-1, maximum($oclims)+1))
 
-heatmap1 = heatmap!(slicescene, slicexaxis, sliceyaxis, sliced_state, interpolate = true, colormap = colornode, colorrange = sliceclims)
+heatmap1 = heatmap!(slicescene, slicexaxis, sliceyaxis, sliced_state, interpolate = true, colormap = slicecolormapnode, colorrange = sliceclims)
 #slicecolormapnode
-
+#tmp = heatmap(randn(3,3), colormap = @lift(Reverse($colornode)))
 # Colorbar
 newlabel = @lift($statename * " " * $unit)
 
@@ -189,7 +189,7 @@ interpolationmenu = Menu(scene, options = zip(interpolationnames, interpolationc
 on(interpolationmenu.selection) do s
     interpolationnode[] = s
     # hack
-    heatmap!(slicescene, slicexaxis, sliceyaxis, sliced_state, interpolate = s, colormap = colornode, colorrange = sliceclims)
+    heatmap!(slicescene, slicexaxis, sliceyaxis, sliced_state, interpolate = s, colormap = slicecolormapnode, colorrange = sliceclims)
 end
 
 directionmenu = Menu(scene, options = zip(directionnames, directionindex))
