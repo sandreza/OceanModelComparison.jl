@@ -34,3 +34,11 @@ function generate_name(DOF, N, Nover, flux, periodic; L = 4π, mpicomm = MPI.COM
     close(f)
     return filename, Ne, dt
 end
+
+function just_generate_name(DOF, N, Nover, flux, periodic)
+    Ne = round(Int, DOF / (N+1))
+    Nˣ = Ne
+    Nʸ = Ne
+    filename = "flux_" * strip(string(flux), ['(', ')']) * "_p" * string(N) * "_N" * string(Ne) * "_Nover" * string(Nover) * "_periodicity_" * string(periodic)
+    return filename
+end

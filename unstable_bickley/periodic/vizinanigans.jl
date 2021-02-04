@@ -397,7 +397,7 @@ sliced_states = @lift([$sliced_state1, $sliced_state2, $sliced_state3])
 sliced_state = @lift($sliced_states[$directionnode]) 
 
 oclims = @lift((quantile($sliced_state[:], $slicelowerclim_node) , quantile($sliced_state[:], $sliceupperclim_node)))
-slicecolormapnode = @lift($oclims[1] < $oclims[2] ? to_colormap($colornode) : reverse(to_colormap($colornode)))
+slicecolormapnode = @lift($oclims[1] < $oclims[2] ? $colornode : $colornode )
 sliceclims = @lift($oclims[1] != $oclims[2] ? (minimum($oclims), maximum($oclims)) : (minimum($oclims)-1, maximum($oclims)+1))
 
 heatmap1 = heatmap!(slicescene, slicexaxis, sliceyaxis, sliced_state, interpolate = true, colormap = slicecolormapnode, colorrange = sliceclims)

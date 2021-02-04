@@ -282,6 +282,7 @@ params = (; N, Nˣ, Nʸ, Lˣ, Lʸ, dt, nout, timeend, Nint)
 # filename = "deletemeagain"
 # filename = "compare_p" * string(N) * "_N" * string(Ne)
 filename = "rusanov_p" * string(N) * "_N" * string(Ne) * "_Nint" * string(Nint)
+
 tic = time()
 dgmodel = run_bickley_jet(params, filename = filename)
 toc = time()
@@ -302,7 +303,9 @@ Nint = 6
 # filename = "roe_overint_p" * string(N) * "_N" * string(Ne)
 # filename = "overint_p" * string(N) * "_N" * string(Ne)
 filename = "rusanov_p" * string(N) * "_N" * string(Ne) * "_Nint" * string(Nint)
-
+filename = "flux_RusanovNumericalFlux_p4_N102_Nover1_periodicity_true"
+filename = "flux_RoeNumericalFlux_p4_N26_Nover1_periodicity_false"
+filename = "flux_RoeNumericalFlux_p4_N102_Nover1_periodicity_true"
 f = jldopen(filename * ".jld2", "r+")
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
 include(pwd() * "/unstable_bickley/periodic/vizinanigans.jl")
@@ -312,7 +315,7 @@ gridhelper = GridHelper(dg_grid)
 x, y, z = coordinates(dg_grid)
 xC, yC, zC = cellcenters(dg_grid)
 ϕ =  ScalarField(copy(x), gridhelper)
-
+DOF = 256
 newx = range(-2π, 2π, length = DOF * 2 )
 newy = range(-2π, 2π, length = DOF * 2 )
 norm(f["100"])
@@ -338,5 +341,6 @@ close(f)
 println("time to interpolate is $(toc-tic)")
 states = [ρ, ρu, ρv, ρθ]
 statenames = ["ρ", "ρu", "ρv", "ρθ"]
+##
 scene = volumeslice(states, statenames = statenames)
 ##
