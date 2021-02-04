@@ -37,6 +37,7 @@ function run_bickley_jet(
     params;
     TimeStepper = LSRK54CarpenterKennedy,
     refDat = (),
+    vtkpath = nothing,
 )
     dg = config.dg
     Q = init_ode_state(dg, FT(0); init_on_cpu = true)
@@ -135,9 +136,6 @@ function make_callbacks(
         end
         mkpath(vtkpath)
 
-        file = jldopen(vtkpath * "/" * filename * ".jld2", "w")
-        file["grid"] = grid
-
         function do_output(vtkstep, model, dg, Q)
             outprefix = @sprintf(
                 "%s/mpirank%04d_step%04d",
@@ -154,8 +152,9 @@ function make_callbacks(
             =#
 
             @info "doing JLD2 output" vtkstep
-            file = jldopen(vtkpath * "/" * filename * ".jld2", "a+")
+            file = jldopen(filename * ".jld2", "a+")
             file[string(vtkstep)] = Q.realdata
+            close(file)
 
             vtkstep += 1
 
@@ -172,6 +171,7 @@ function make_callbacks(
             end
         cbvector = (cbvector..., cbvtk)
     end
+
 
     cbcs_dg = ClimateMachine.StateCheck.sccreate(
         [(Q, "state")],

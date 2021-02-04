@@ -28,7 +28,7 @@ function generate_name(DOF, N, Nover, flux, periodic; L = 4π, mpicomm = MPI.COM
     timeend = FT(endtime) # s
     nout = round(Int, 2 / dt)
     dt = 2 / nout
-    filename = "flux_" * string(flux) * "_p" * string(N) * "_N" * string(Ne) * "_Nover" * string(Nover) * "_periodicity_" * string(periodic)
+    filename = "flux_" * strip(string(flux), ['(', ')']) * "_p" * string(N) * "_N" * string(Ne) * "_Nover" * string(Nover) * "_periodicity_" * string(periodic)
     f = jldopen(filename * ".jld2", "a+")
     f["grid"] = grid
     close(f)

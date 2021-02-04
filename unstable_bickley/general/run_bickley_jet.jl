@@ -14,7 +14,7 @@ DOF = 32 # 32, 128, 512
 N = 3 # 1,2,3,4
 Nover = 1 # 1
 flux = RoeNumericalFlux() # RusanovNumericalFlux()
-periodic = true #false
+periodic = false #false
 L = 4π
 endtime = 200.0
 
@@ -23,7 +23,7 @@ filename, Ne, dt = generate_name(DOF, N, Nover, flux, periodic, L = L, endtime =
 # simulation times
 timeend = FT(endtime) # s
 dt = FT(dt) # s
-nout = Int(100)
+nout = round(Int, 2 / dt)
 # Domain size
 Lˣ = L  # m
 Lʸ = L  # m
@@ -36,7 +36,7 @@ if periodic
         filename,
         params;
         numerical_flux_first_order = flux,
-        Nover = 0,
+        Nover = Nover,
         periodicity = (true, true),
         boundary = ((0, 0), (0, 0)),
         boundary_conditons = (ClimateMachine.Ocean.OceanBC(
@@ -49,7 +49,7 @@ else
         filename,
         params;
         numerical_flux_first_order = flux,
-        Nover = 0,
+        Nover = Nover,
         periodicity = (true, false),
         boundary = ((0, 0), (1,1)),
         boundary_conditons = (ClimateMachine.Ocean.OceanBC(
@@ -61,7 +61,7 @@ end
 
 tic = Base.time()
 
-run_bickley_jet(config, params; TimeStepper = SSPRK22Heuns)
+run_bickley_jet(config, params; TimeStepper = SSPRK22Heuns, vtkpath = "")
 #  LSRK54CarpenterKennedy
 toc = Base.time()
 time = toc - tic

@@ -521,5 +521,6 @@ splits boundary condition application into velocity
 end
 
 include("bc_velocity.jl")
+include("bc_tracer.jl")
 
 end

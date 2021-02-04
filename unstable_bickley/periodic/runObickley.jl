@@ -321,7 +321,7 @@ norm(f["100"])
 ρu = zeros(length(newx), length(newy), 101)
 ρv = zeros(length(newx), length(newy), 101)
 ρθ = zeros(length(newx), length(newy), 101)
-tic = time()
+tic = Base.time()
 for i in 0:100
     Q = f[string(i)]
     ϕ .= Q[:,1,:]
@@ -333,7 +333,7 @@ for i in 0:100
     ϕ .= Q[:,4,:]
     ρθ[:,:,i+1] = ϕ(newx, newy, threads = true)
 end
-toc = time()
+toc = Base.time()
 close(f)
 println("time to interpolate is $(toc-tic)")
 states = [ρ, ρu, ρv, ρθ]
