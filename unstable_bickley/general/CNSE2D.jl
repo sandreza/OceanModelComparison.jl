@@ -1,7 +1,8 @@
 using Test
 using JLD2
 using ClimateMachine
-ClimateMachine.init()
+# ClimateMachine.init()
+ClimateMachine.init(disable_gpu = true)
 using ClimateMachine.ODESolvers
 using ClimateMachine.Mesh.Filters
 using ClimateMachine.VariableTemplates
@@ -154,7 +155,7 @@ function make_callbacks(
 
             @info "doing JLD2 output" vtkstep
             file = jldopen(filename * ".jld2", "a+")
-            file[string(vtkstep)] = Q.realdata
+            file[string(vtkstep)] = Array(Q.realdata)
             close(file)
 
             vtkstep += 1

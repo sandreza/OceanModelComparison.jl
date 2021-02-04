@@ -1,5 +1,6 @@
 #!/usr/bin/env julia --project
-
+# path = "/home/sandre/Desktop/Julia/OceanModelComparison.jl/unstable_bickley/general/"
+# include(path * "run_bickley_jet.jl")
 include("bickley_jet.jl")
 include("convenience.jl")
 ClimateMachine.init()
@@ -9,9 +10,9 @@ const FT = Float64
 #################
 # RUN THE TESTS #
 #################
-DOFs = [32]
-Ns = [1]
-Novers = [0]
+DOFs = [128]
+Ns = [1, 2, 3, 4]
+Novers = [0, 1]
 fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
 periodicity = [false, true]
 
