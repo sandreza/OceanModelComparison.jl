@@ -5,6 +5,7 @@ ClimateMachine.init()
 using ClimateMachine.ODESolvers
 using ClimateMachine.Mesh.Filters
 using ClimateMachine.VariableTemplates
+using ClimateMachine.Mesh.Grids
 polynomialorders(::DiscontinuousSpectralElementGrid{T, dim, N}) where {T, dim, N} = Tuple([N for i in 1:dim])
 using ClimateMachine.Ocean
 
