@@ -42,3 +42,12 @@ function just_generate_name(DOF, N, Nover, flux, periodic)
     filename = "flux_" * strip(string(flux), ['(', ')']) * "_p" * string(N) * "_N" * string(Ne) * "_Nover" * string(Nover) * "_periodicity_" * string(periodic)
     return filename
 end
+
+function nameprettifier(name)
+    tmp = split(name, "_")
+    dof = "polynomial order " * tmp[3][2] * " and " * tmp[4][2:3] * " elements"
+    stringflux = ", a " * tmp[2] 
+    intorder = ", and integration order 2(" * tmp[3][2] * "+" * tmp[5][end] * ")- 1," 
+    return dof * stringflux * intorder
+end
+

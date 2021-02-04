@@ -2,7 +2,7 @@ using JLD2
 using ClimateMachine
 ClimateMachine.init()
 using ClimateMachine.Mesh.Grids: DiscontinuousSpectralElementGrid
-polynomialorders(::DiscontinuousSpectralElementGrid{T, dim, N}) where {T, dim, N} = Tuple([N for i in 1:dim])
+polynomialorders(::DiscontinuousSpectralElementGrid{T, dim, N}) where {T, dim, N} = N
 using ClimateMachine.Mesh.Topologies
 using ClimateMachine.Mesh.Grids
 using ClimateMachine.DGMethods
@@ -10,7 +10,7 @@ using ClimateMachine.MPIStateArrays
 using MPI
 using LinearAlgebra
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
-include(pwd() * "/unstable_bickley/periodic/vizinanigans2.jl")
+include(pwd() * "/unstable_bickley/periodic/vizinanigans.jl")
 include(pwd() * "/unstable_bickley/general/convenience.jl")
 
 DOFs = [128]
@@ -19,6 +19,12 @@ Novers = [0, 1]
 fluxes = [RusanovNumericalFlux(), RoeNumericalFlux()]
 periodicity = [true, false]
 
+DOFs = [32]
+Ns = [1]
+Novers = [0]
+fluxes = [RoeNumericalFlux()]
+periodicity = [false]
+
 namelist = []
 for DOF in DOFs, Nover in Novers, flux in fluxes, periodic in periodicity, N in Ns
     name = just_generate_name(DOF, N, Nover, flux, periodic)
@@ -26,8 +32,41 @@ for DOF in DOFs, Nover in Novers, flux in fluxes, periodic in periodicity, N in 
     print(name)
     println(" ")
 end
+#=
+for name in namelist
+    println("constructing " * name)
+    f = jldopen(name * ".jld2", "r+")
+end
+=#
+name = namelist[1]
+f = jldopen(name * ".jld2")
+simtime = f["simulationtime"]
+threadnum = f["threads"]
+array = f["arraytype"]
+if array == "Array" 
+    archstring = " the CPU with " * string(threadnum) * " threads"
+else
+    archstring = " the GPU"
+end
+prettyname = nameprettifier(name)
+println("The simulation time was " * @sprintf("%0.2f", simtime) * " seconds " * prettyname * archstring)
+println("------------------------------")
 
+newgrid = f["grid"]
+gridhelper = GridHelper(newgrid)  
+x, y, z = coordinates(dg_grid)
+ϕ =  ScalarField(copy(x), gridhelper)
 
+ρθ = zeros(length(newx), length(newy), 100)
+tic = time()
+for i in 1:100
+    Q = climatemachine[string(i)]
+    ϕ .= Q[:,4,:]
+    ρθ[:,:,i] = ϕ(newx, newy, threads = true)
+end
+toc = time()
+
+##
 #=
 
 DOF = 32
