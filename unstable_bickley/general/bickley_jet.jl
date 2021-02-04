@@ -20,8 +20,8 @@ function Config(
     topl = BrickTopology(
         mpicomm,
         brickrange,
-        periodicity = (true, true),
-        boundary = ((0, 0), (0, 0)),
+        periodicity = periodicity,
+        boundary = boundary,
     )
 
     grid = DiscontinuousSpectralElementGrid(

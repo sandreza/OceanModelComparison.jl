@@ -30,6 +30,7 @@ const vtkpath = nothing
     params = (; N, Nˣ, Nʸ, Lˣ, Lʸ, dt, nout, timeend)
 
     setups = [
+        #=
         (;
             name = "rusanov_periodic",
             flux = RusanovNumericalFlux(),
@@ -58,8 +59,10 @@ const vtkpath = nothing
             boundary = ((0, 0), (1, 1)),
             Nover = 0,
         ),
-        # (; name = "rusanov_overintegration", flux = RusanovNumericalFlux(), periodicity = (true, false), boundary = ((0,0), (1,1)), Nover = 1),
+        =#
+        (; name = "rusanov_overintegration", flux = RusanovNumericalFlux(), periodicity = (true, false), boundary = ((0,0), (1,1)), Nover = 1),
         # rusanov and overintegration seems to be non-deterministic
+        #=
         (;
             name = "roeflux_overintegration",
             flux = RoeNumericalFlux(),
@@ -67,6 +70,7 @@ const vtkpath = nothing
             boundary = ((0, 0), (1, 1)),
             Nover = 1,
         ),
+        =#
     ]
 
     for setup in setups
