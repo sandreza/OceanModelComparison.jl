@@ -9,17 +9,19 @@ const FT = Float64
 #################
 # RUN THE TESTS #
 #################
+DOFs = [32]
+Ns = [1]
+Novers = [0]
+fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
+periodicity = [false, true]
 
-DOF = 32 # 32, 128, 512
-N = 3 # 1,2,3,4
-Nover = 1 # 1
-flux = RoeNumericalFlux() # RusanovNumericalFlux()
-periodic = false #false
+for DOF in DOFs, N in Ns, Nover in Novers, flux in fluxes, periodic in periodicity
+    
 L = 4π
 endtime = 200.0
 
 filename, Ne, dt = generate_name(DOF, N, Nover, flux, periodic, L = L, endtime = endtime)
-
+println("Doing " * filename)
 # simulation times
 timeend = FT(endtime) # s
 dt = FT(dt) # s
@@ -30,7 +32,6 @@ Lʸ = L  # m
 Nˣ = Ne
 Nʸ = Ne
 params = (; N, Nˣ, Nʸ, Lˣ, Lʸ, dt, nout, timeend)
-##
 if periodic
     config = Config(
         filename,
@@ -72,3 +73,8 @@ f["simulationtime"] = toc - tic
 f["threads"] = Threads.nthreads()
 f["arraytype"] = string(ClimateMachine.array_type())
 close(f)
+end
+##
+for  i in [1], j in [2,3]
+    println(i,j)
+end
