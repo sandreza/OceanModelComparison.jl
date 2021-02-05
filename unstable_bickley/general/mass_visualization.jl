@@ -13,18 +13,13 @@ include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
 include(pwd() * "/unstable_bickley/periodic/vizinanigans.jl")
 include(pwd() * "/unstable_bickley/general/convenience.jl")
 
-DOFs = [128]
+DOFs = [512]
 Ns = [1, 2, 3, 4]
 Novers = [0, 1]
 fluxes = [RusanovNumericalFlux(), RoeNumericalFlux()]
-periodicity = [true, false]
+periodicity = [false] # [true, false]
 
-DOFs = [32]
-Ns = [1]
-Novers = [0]
-fluxes = [RoeNumericalFlux()]
-periodicity = [false]
-
+states = []
 namelist = []
 for DOF in DOFs, Nover in Novers, flux in fluxes, periodic in periodicity, N in Ns
     name = just_generate_name(DOF, N, Nover, flux, periodic)
@@ -32,179 +27,117 @@ for DOF in DOFs, Nover in Novers, flux in fluxes, periodic in periodicity, N in 
     print(name)
     println(" ")
 end
-#=
+##
 for name in namelist
-    println("constructing " * name)
-    f = jldopen(name * ".jld2", "r+")
-end
-=#
-name = namelist[1]
-f = jldopen(name * ".jld2")
-simtime = f["simulationtime"]
-threadnum = f["threads"]
-array = f["arraytype"]
-if array == "Array" 
-    archstring = " the CPU with " * string(threadnum) * " threads"
-else
-    archstring = " the GPU"
-end
-prettyname = nameprettifier(name)
-println("The simulation time was " * @sprintf("%0.2f", simtime) * " seconds " * prettyname * archstring)
-println("------------------------------")
-
-newgrid = f["grid"]
-gridhelper = GridHelper(newgrid)  
-x, y, z = coordinates(dg_grid)
-ϕ =  ScalarField(copy(x), gridhelper)
-
-ρθ = zeros(length(newx), length(newy), 100)
-tic = time()
-for i in 1:100
-    Q = climatemachine[string(i)]
-    ϕ .= Q[:,4,:]
-    ρθ[:,:,i] = ϕ(newx, newy, threads = true)
-end
-toc = time()
-
-##
-#=
-
-DOF = 32
-
-states = []
-estates = []
-istates = []
-oiroestates = []
-for N in [1,2,3, 4]
-Ne = round(Int, DOF / (N+1))
-filename = "compare_p" * string(N) * "_N" * string(Ne)
-climatemachine = jldopen(filename * ".jld2", "r+")
-
-filename = "roe_p" * string(N) * "_N" * string(Ne) 
-roe  = jldopen(filename * ".jld2", "r+")
-
-filename = "overint_p" * string(N) * "_N" * string(Ne)
-oiclimatemachine  = jldopen(filename * ".jld2", "r+")
-
-filename = "roe_overint_p" * string(N) * "_N" * string(Ne)
-oiroe  = jldopen(filename * ".jld2", "r+")
-
-cmt = climatemachine["6threadsimulationtime"]
-et = roe["6threadsimulationtime"]
-oicmt = oiclimatemachine["6threadsimulationtime"]
-oiet = oiroe["6threadsimulationtime"]
-
-println("Rusanov on 6 threads took $(cmt) seconds")
-println("Roe on 6 threads took $(et) seconds")
-println("OI Rusanov on 6threads took $(oicmt) seconds")
-println("OI Roe on 6threads took $(oiet) seconds")
-
-oi_grid = oiclimatemachine["grid"]
-oigridhelper = GridHelper(oi_grid)  
-dg_grid = climatemachine["grid"]
-gridhelper = GridHelper(dg_grid)   
-x, y, z = coordinates(dg_grid)
-xC, yC, zC = cellcenters(dg_grid)
-ϕ =  ScalarField(copy(x), gridhelper)
-
-oix, oiy, oiz = coordinates(oi_grid)
-oiϕ = ScalarField(copy(oix), oigridhelper)
-
-newx = range(-2π, 2π, length = DOF * 2)
-newy = range(-2π, 2π, length = DOF * 2)
-ρθ = zeros(length(newx), length(newy), 100)
-e_ρθ = zeros(length(newx), length(newy), 100)
-oi_ρθ = zeros(length(newx), length(newy), 100)
-oi_e_ρθ = zeros(length(newx), length(newy), 100)
-tic = time()
-for i in 1:100
-    Q = climatemachine[string(i)]
-    ϕ .= Q[:,4,:]
-    ρθ[:,:,i] = ϕ(newx, newy, threads = true)
-    ϕ.data .= roe[string(i)][:,4,:]
-    e_ρθ[:,:,i] = ϕ(newx, newy, threads = true)
-    # oi
-    Q = oiclimatemachine[string(i)]
-    oiϕ .= Q[:,4,:]
-    oi_ρθ[:,:,i] = oiϕ(newx, newy, threads = true)
-    oiϕ.data .= oiroe[string(i)][:,4,:]
-    oi_e_ρθ[:,:,i] = oiϕ(newx, newy, threads = true)
-end
-push!(states, ρθ)
-push!(estates, e_ρθ)
-push!(istates, oi_ρθ)
-push!(oiroestates, oi_e_ρθ)
-toc = time()
-println("Interpolation took $(toc-tic) seconds")
-println("-------------------")
-close(climatemachine)
-close(roe)
-close(oiclimatemachine)
-close(oiroe)
+    f = jldopen(name * ".jld2")
+    simtime = f["simulationtime"]
+    threadnum = f["threads"]
+    array = f["arraytype"]
+    if array == "Array" 
+        archstring = " on the CPU with " * string(threadnum) * " threads"
+    else
+        archstring = " on the GPU"
+    end
+    prettyname = nameprettifier(name)
+    println("The simulation time was " * @sprintf("%0.2f", simtime) * " seconds for " * prettyname * archstring)
+    println("------------------------------")
+    # get old grid
+    newgrid = f["grid"]
+    gridhelper = GridHelper(newgrid)  
+    x, y, z = coordinates(newgrid)
+    ϕ =  ScalarField(copy(x), gridhelper)
+    # new grid
+    newx = range(-2π, 2π, length = DOFs[1] * 2)
+    newy = range(-2π, 2π, length = DOFs[1] * 2)
+    ρθ = zeros(length(newx), length(newy), 100)
+    # interpolate
+    for i in 1:100
+        Q = f[string(i)]
+        ϕ .= Q[:,4,:]
+        ρθ[:,:,i] = ϕ(newx, newy, threads = true)
+    end
+    push!(states, ρθ)
+    close(f)
 end
 
 ##
-resolution = (2404, 1308)
+DOF = DOFs[1]
+resolution = (2880, 1998)
 interpolate = false
 scene, layout = layoutscene(resolution = resolution )
-lscene = layout[2:4,3:5] = LScene(scene)
+lscene1 = layout[2:4, 3:5] = LScene(scene)
 lscene2 = layout[2:4, 6:8] = LScene(scene)
 lscene3 = layout[5:7, 3:5] = LScene(scene)
 lscene4 = layout[5:7, 6:8] = LScene(scene)
 
-layout[1, 3:5] = LText(scene, "Rusanov", textsize = 50)
-layout[1, 6:8] = LText(scene, "Roe", textsize = 50)
-layout[3, 2] = LText(scene, "Underintegration", textsize = 50)
-layout[6, 2] = LText(scene, "Overintegration", textsize = 50)
-layout[1,1] = LText(scene, "ρθ, DOF = $(DOF)^2", textsize = 50)
-time_slider = LSlider(scene, range = Int.(range(1, 100, length=100)), startvalue = 1)
+layout[1, 3:5] = Label(scene, "Rusanov", textsize = 50)
+layout[1, 6:8] = Label(scene, "Roe", textsize = 50)
+layout[3, 2] = Label(scene, "Underintegration", textsize = 50)
+layout[6, 2] = Label(scene, "Overintegration", textsize = 50)
+layout[1,1] = Label(scene, "ρθ, DOF = $(DOF)^2", textsize = 50)
+
+#=
+layout[1,1] = Label(scene, "ρθ, Roe Fluxes", textsize = 50)
+layout[1, 3:5-1] = Label(scene, "Underintegration", textsize = 50)
+layout[1, 6:8-1] = Label(scene, "Overintegration", textsize = 50)
+layout[3, 2] = Label(scene, "32²", textsize = 50)
+layout[6, 2] = Label(scene, "128²", textsize = 50)
+=#
+
+time_slider = Slider(scene, range = Int.(range(1, 100, length=100)), startvalue = 1)
 time_node = time_slider.value
 
 # roe
-estate1 = @lift(estates[1][:,:,$time_node])
-estate2 = @lift(estates[2][:,:,$time_node])
-estate3 = @lift(estates[3][:,:,$time_node])
-estate4 = @lift(estates[4][:,:,$time_node])
-clims = (-1,1)
-heatmap1 = heatmap!(lscene2, 0..1, 1..2, estate1, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
-heatmap!(lscene2, 1..2, 1..2, estate2, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
-heatmap!(lscene2, 0..1, 0..1, estate3, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
-heatmap!(lscene2, 1..2, 0..1, estate4, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
-
-# ClimateMachine
 state1 = @lift(states[1][:,:,$time_node])
 state2 = @lift(states[2][:,:,$time_node])
 state3 = @lift(states[3][:,:,$time_node])
 state4 = @lift(states[4][:,:,$time_node])
 clims = (-1,1)
-heatmap1 = heatmap!(lscene, 0..1, 1..2, state1, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
-heatmap!(lscene, 1..2, 1..2, state2, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
-heatmap!(lscene, 0..1, 0..1, state3, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
-heatmap!(lscene, 1..2, 0..1, state4, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
 
-# Overintegration Rusanov
-istate1 = @lift(istates[1][:,:,$time_node])
-istate2 = @lift(istates[2][:,:,$time_node])
-istate3 = @lift(istates[3][:,:,$time_node])
-istate4 = @lift(istates[4][:,:,$time_node])
-clims = (-1,1)
-heatmap1 = heatmap!(lscene3, 0..1, 1..2, istate1, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
-heatmap!(lscene3, 1..2, 1..2, istate2, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
-heatmap!(lscene3, 0..1, 0..1, istate3, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
-heatmap!(lscene3, 1..2, 0..1, istate4, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
+heatmap1 = heatmap!(lscene1, 0..1, 1.1..2.1, state1, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene1, 1..2, 1.1..2.1, state2, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene1, 0..1, 0..1, state3, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene1, 1..2, 0..1, state4, colorrange = clims, colormap = :balance, interpolate = interpolate)
 
-# Overintegration Roe
-oiroestate1 = @lift(oiroestates[1][:,:,$time_node])
-oiroestate2 = @lift(oiroestates[2][:,:,$time_node])
-oiroestate3 = @lift(oiroestates[3][:,:,$time_node])
-oiroestate4 = @lift(oiroestates[4][:,:,$time_node])
-clims = (-1,1)
-heatmap1 = heatmap!(lscene4, 0..1, 1..2, oiroestate1, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
-heatmap!(lscene4, 1..2, 1..2, oiroestate2, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
-heatmap!(lscene4, 0..1, 0..1, oiroestate3, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
-heatmap!(lscene4, 1..2, 0..1, oiroestate4, colorrange = clims, colormap = to_colormap(:balance), interpolate = interpolate)
+state5 = @lift(states[5][:,:,$time_node])
+state6 = @lift(states[6][:,:,$time_node])
+state7 = @lift(states[7][:,:,$time_node])
+state8 = @lift(states[8][:,:,$time_node])
 
-cbar = LColorbar(scene, heatmap1)
+heatmap1 = heatmap!(lscene2, 0..1, 1.1..2.1, state5, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene2, 1..2, 1.1..2.1, state6, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene2, 0..1, 0..1, state7, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene2, 1..2, 0..1, state8, colorrange = clims, colormap = :balance, interpolate = interpolate)
+
+state9  = @lift(states[9][:,:,$time_node])
+state10 = @lift(states[10][:,:,$time_node])
+state11 = @lift(states[11][:,:,$time_node])
+state12 = @lift(states[12][:,:,$time_node])
+
+heatmap1 = heatmap!(lscene3, 0..1, 1.1..2.1, state9, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene3, 1..2, 1.1..2.1, state10, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene3, 0..1, 0..1, state11, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene3, 1..2, 0..1, state12, colorrange = clims, colormap = :balance, interpolate = interpolate)
+
+state13  = @lift(states[13][:,:,$time_node])
+state14 = @lift(states[14][:,:,$time_node])
+state15 = @lift(states[15][:,:,$time_node])
+state16 = @lift(states[16][:,:,$time_node])
+
+heatmap1 = heatmap!(lscene4, 0..1, 1.1..2.1, state13, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene4, 1..2, 1.1..2.1, state14, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene4, 0..1, 0..1, state15, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene4, 1..2, 0..1, state16, colorrange = clims, colormap = :balance, interpolate = interpolate)
+
+#=
+heatmap1 = heatmap!(lscene1, 0..1, 0..1, state1, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene1, 1..2, 0..1, state2, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene1, 2..3, 0..1, state3, colorrange = clims, colormap = :balance, interpolate = interpolate)
+heatmap!(lscene1, 3..4, 0..1, state4, colorrange = clims, colormap = :balance, interpolate = interpolate)
+=#
+
+
+cbar = Colorbar(scene, heatmap1)
 cbar.height = Relative(1/3)
 cbar.width = Relative(1/3)
 cbar.halign = :left
@@ -212,11 +145,11 @@ cbar.labelsize = 50
 
 slidertext = @lift("Time t = " * string(2 *  $time_node))
 layout[2:6, 1] = vgrid!(
-    LText(scene, slidertext, width = nothing),
+    Label(scene, slidertext, width = nothing),
     time_slider,
     cbar,
-    LText(scene, "top left p=1, top right p=2"),
-    LText(scene, "bottom left p=3, bottom right p=4"),
+    Label(scene, "top left p=1, top right p=2"),
+    Label(scene, "bottom left p=3, bottom right p=4"),
 )
 display(scene)
 
@@ -224,10 +157,14 @@ display(scene)
 seconds = 15
 fps = 10
 frames = round(Int, fps * seconds )
-record(scene, pwd() * "/roe_overint.mp4"; framerate = fps) do io
+record(scene, pwd() * "/512dof.mp4"; framerate = fps) do io
     for i = 1:frames
         sleep(1/fps)
         recordframe!(io)
     end
 end
-=#
+
+##
+record(scene, "512dof.mp4", 1:100, framerate=10) do n
+    time_node[] = n
+end

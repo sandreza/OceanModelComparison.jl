@@ -21,6 +21,7 @@ function generate_name(DOF, N, Nover, flux, periodic; L = 4π, mpicomm = MPI.COM
         DeviceArray = Array,
         polynomialorder = N + Nover,
     )
+    
     Δx =  min_node_distance(grid)
     cfl = 0.15
     dt = cfl * Δx / √10
@@ -45,7 +46,7 @@ end
 
 function nameprettifier(name)
     tmp = split(name, "_")
-    dof = "polynomial order " * tmp[3][2] * " and " * tmp[4][2:3] * " elements"
+    dof = "polynomial order " * tmp[3][2] * " and " * tmp[4][2:end] * " elements"
     stringflux = ", a " * tmp[2] 
     intorder = ", and integration order 2(" * tmp[3][2] * "+" * tmp[5][end] * ")- 1," 
     return dof * stringflux * intorder
