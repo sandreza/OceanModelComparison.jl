@@ -7,7 +7,7 @@ using ClimateMachine.Mesh.Grids
 using ClimateMachine.DGMethods
 using ClimateMachine.MPIStateArrays
 using ClimateMachine.DGMethods.NumericalFluxes
-using MPI
+using MPI, Printf
 using LinearAlgebra
 
 include("convenience.jl")
@@ -16,13 +16,7 @@ DOFs = [32]
 Ns = [1, 2, 3, 4]
 Novers = [0, 1]
 fluxes = [RusanovNumericalFlux(), RoeNumericalFlux()]
-periodicity = [false] # [true, false]
-
-DOFs = [32]
-Ns = [5]
-Novers = [0,1]
-fluxes = [RoeNumericalFlux()]
-periodicity = [true]
+periodicity = [true, false] # [true, false]
 
 states = []
 namelist = []
