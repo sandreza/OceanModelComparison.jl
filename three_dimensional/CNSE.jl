@@ -135,10 +135,6 @@ function make_callbacks(
         end
         mkpath(vtkpath)
 
-        file = jldopen(filename * ".jld2", "a+")
-        file["grid"] = dg.grid
-        close(file)
-
         function do_output(vtkstep, model, dg, Q)
             outprefix = @sprintf(
                 "%s/mpirank%04d_step%04d",

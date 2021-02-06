@@ -9,9 +9,7 @@ using ClimateMachine.DGMethods
 using ClimateMachine.MPIStateArrays
 using MPI
 using LinearAlgebra
-include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
-include(pwd() * "/unstable_bickley/periodic/vizinanigans.jl")
-include(pwd() * "/unstable_bickley/general/convenience.jl")
+include("convenience.jl")
 
 DOFs = [512]
 Ns = [1, 2, 3, 4]

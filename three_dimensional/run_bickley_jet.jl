@@ -1,6 +1,7 @@
 #!/usr/bin/env julia --project
 
 include("bickley_jet.jl")
+include("convenience.jl")
 
 FT = Float64
 
@@ -34,7 +35,7 @@ for DOF in DOFs, N in Ns, Nover in Novers, flux in fluxes, periodic in periodici
     nout = 100
 
     filename, Ne, dt = generate_name(DOF, N, Nover, flux, periodic)
-
+    println("curretly doing " * filename)
     # Domain Resolution
     Nˣ = Ne
     Nʸ = Ne
