@@ -23,7 +23,7 @@ fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
 periodicity = [false, true]
 
 DOFs = [32]
-Ns = [1, 2, 3, 4]
+Ns = [4]
 Novers = [1]
 fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
 periodicity = [true]
