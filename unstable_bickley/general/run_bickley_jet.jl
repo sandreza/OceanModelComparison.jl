@@ -10,7 +10,7 @@ const FT = Float64
 #################
 # RUN THE TESTS #
 #################
-DOFs = [128]
+DOFs = [512]
 Ns = [1, 2, 3, 4]
 Novers = [0, 1]
 fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
@@ -21,7 +21,7 @@ for DOF in DOFs, N in Ns, Nover in Novers, flux in fluxes, periodic in periodici
 L = 4π
 endtime = 200.0
 
-filename, Ne, dt = generate_name(DOF, N, Nover, flux, periodic, L = L, endtime = endtime)
+filename, Ne, dt = generate_name_2(DOF, N, Nover, flux, periodic, L = L, endtime = endtime)
 println("Doing " * filename)
 # simulation times
 timeend = FT(endtime) # s
