@@ -74,7 +74,7 @@ for DOF in DOFs, N in Ns, Nover in Novers, flux in fluxes, periodic in periodici
             params;
             numerical_flux_first_order = flux,
             Nover = Nover,
-            periodicity = (true, true, true),
+            periodicity = (true, periodic, true),
             boundary = ((0, 0), (1, 1), (0, 0)),
             boundary_conditons = (ClimateMachine.Ocean.OceanBC(
                 Impenetrable(FreeSlip()),
