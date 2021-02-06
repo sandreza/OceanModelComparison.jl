@@ -38,19 +38,23 @@ for name in namelist
         archstring = " on the GPU"
     end
     prettyname = nameprettifier(name)
+    println("For simulation " * name)
     println("The simulation time was " * @sprintf("%0.2f", simtime) * " seconds for " * prettyname * archstring)
     # get old grid
     newgrid = f["grid"]
     # interpolate
     M = view(newgrid.vgeo, :, newgrid.Mid, :)
     Q = f[string(100)]
-    field = Q[:,5,:] # this is the tracer
-    μQ = sum(M .* field)
-    l1Q = sum(M .* abs.(field))
-    val = μQ / l1Q
-    println("the mean value is ", μQ)
-    println("the l1 norm is ", l1Q)
-    println("the relative mean value is ", val)
+    for stateindex in 1:5
+        field = Q[:,stateindex,:] # this is the tracer
+        μQ = sum(M .* field) / sum(M) 
+        l1Q = sum(M .* abs.(field)) / sum(M)
+        val = μQ / l1Q
+        println("For stateindex " * string(stateindex))
+        println("the mean value is ", μQ)
+        println("the l1 norm is ", l1Q)
+        println("the relative mean value is ", val)
+    end
 
     println("------------------------------")
     close(f)
