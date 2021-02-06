@@ -7,13 +7,14 @@ using ClimateMachine.Mesh.Topologies
 using ClimateMachine.Mesh.Grids
 using ClimateMachine.DGMethods
 using ClimateMachine.MPIStateArrays
+using ClimateMachine.DGMethods.NumericalFluxes
 using MPI
 using LinearAlgebra
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
 include(pwd() * "/unstable_bickley/periodic/vizinanigans.jl")
 include(pwd() * "/unstable_bickley/general/convenience.jl")
 
-DOFs = [512]
+DOFs = [32]
 Ns = [1, 2, 3, 4]
 Novers = [0, 1]
 fluxes = [RusanovNumericalFlux(), RoeNumericalFlux()]
@@ -51,10 +52,18 @@ for name in namelist
     newy = range(-2π, 2π, length = DOFs[1] * 2)
     ρθ = zeros(length(newx), length(newy), 100)
     # interpolate
+    M = view(newgrid.vgeo, :, newgrid.Mid, :)
     for i in 1:100
         Q = f[string(i)]
         ϕ .= Q[:,4,:]
         ρθ[:,:,i] = ϕ(newx, newy, threads = true)
+    end
+    Q = f[string(100)]
+    val = sum(M .* ϕ.data)/sum(M .* abs.(ϕ.data))
+    if val ≥ eps(1e2)
+        println(name * " not conserved to machine precision at " * string(100))
+        println("the relative value is ", val)
+        println("the value is ", sum(M .* ϕ.data))
     end
     push!(states, ρθ)
     close(f)

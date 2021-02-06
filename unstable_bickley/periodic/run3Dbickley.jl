@@ -17,7 +17,7 @@ using CLIMAParameters: AbstractEarthParameterSet, Planet
 using ClimateMachine.BalanceLaws:
     vars_state, Prognostic, Auxiliary, number_states
 
-polynomialorders(::DiscontinuousSpectralElementGrid{T, dim, N}) where {T, dim, N} = Tuple([N for i in 1:dim])
+polynomialorders(::DiscontinuousSpectralElementGrid{T, dim, N}) where {T, dim, N} = N
 using ClimateMachine.Ocean
 
 include(pwd() * "/unstable_bickley/periodic/ThreeDimensionalCompressibleNavierStokesEquations.jl")
@@ -236,10 +236,10 @@ end
 FT = Float64
 vtkpath = abspath(joinpath(ClimateMachine.Settings.output_dir, "vtk_bickley_jet"))
 effective_node_spacing(Ne, Np, Lx=4π) = Lx / (Ne * (Np + 1)^2)
-for N in [2]
+for N in [3]
     for DOF in [32]
 # N = 4
-Nint = N + 1
+Nint = N + 0
 # DOF = 128
 Ne = round(Int, DOF / (N+1))
 Nˣ = Ne
@@ -247,11 +247,12 @@ Nʸ = Ne
 Nᶻ = 1
 Lˣ = 4 * FT(π)  # m
 Lʸ = 4 * FT(π)  # m
-Lᶻ = 4 * FT(π)  # m
+# Lᶻ = 4 * FT(π)  # m
+Lᶻ = 4 * FT(π)
 # grid
 xrange = range(-Lˣ / 2; length = Nˣ + 1, stop = Lˣ / 2)
 yrange = range(-Lʸ / 2; length = Nʸ + 1, stop = Lʸ / 2)
-zrange = range(-Lᶻ / 2; length = Nʸ + 1, stop = Lᶻ / 2)
+zrange = range(-Lᶻ / 2; length = Nᶻ + 1, stop = Lᶻ / 2)
 mpicomm = MPI.COMM_WORLD
 brickrange = (xrange, yrange, zrange)
 topl = StackedBrickTopology(
@@ -295,13 +296,13 @@ close(f)
 end
 
 ##
-N = 2
+N = 3
 DOF = 32
-Nint = N+1
+Nint = N+0
 Ne = round(Int, DOF / (N+1))
-# filename = "3D_overint_p" * string(N) * "_N" * string(Ne)
+filename = "3D_overint_p" * string(N) * "_N" * string(Ne)
 #filename = "3D_compare_p" * string(N) * "_N" * string(Ne)
-filename = "3D_roe_p" * string(N) * "_N" * string(Ne) * "_Nint" * string(Nint)
+# filename = "3D_roe_p" * string(N) * "_N" * string(Ne) * "_Nint" * string(Nint)
 # filename = "overint_p" * string(N) * "_N" * string(Ne)
 f = jldopen(filename * ".jld2", "r+")
 include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
@@ -343,7 +344,7 @@ println("time to interpolate is $(toc-tic)")
 ind = 100
 states = [ρ[:,:,:,ind], ρu[:,:,:,ind], ρv[:,:,:,ind], ρw[:,:,:,ind], ρθ[:,:,:,ind]]
 
-states = [ρ[:,:,1,:], ρu[:,:,1,:], ρv[:,:,1,:], ρw[:,:,1,:], ρθ[:,:,1,:]]
+# states = [ρ[:,:,1,:], ρu[:,:,1,:], ρv[:,:,1,:], ρw[:,:,1,:], ρθ[:,:,1,:]]
 statenames = ["ρ", "ρu", "ρv", "ρw", "ρθ"]
 scene = volumeslice(states, statenames = statenames)
 
