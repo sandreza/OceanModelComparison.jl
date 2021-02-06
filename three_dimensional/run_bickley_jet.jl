@@ -1,7 +1,6 @@
 #!/usr/bin/env julia --project
 
 include("bickley_jet.jl")
-ClimateMachine.init()
 
 FT = Float64
 
