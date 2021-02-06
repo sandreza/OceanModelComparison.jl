@@ -22,6 +22,12 @@ Novers = [0, 1]
 fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
 periodicity = [false, true]
 
+DOFs = [32]
+Ns = [1, 2, 3, 4]
+Novers = [1]
+fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
+periodicity = [true]
+
 for DOF in DOFs, N in Ns, Nover in Novers, flux in fluxes, periodic in periodicity
     # simulation times
     timeend = FT(200) # s
