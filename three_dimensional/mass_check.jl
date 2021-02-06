@@ -20,7 +20,7 @@ periodicity = [false] # [true, false]
 
 DOFs = [32]
 Ns = [5]
-Novers = [0]
+Novers = [0,1]
 fluxes = [RoeNumericalFlux()]
 periodicity = [true]
 
@@ -55,7 +55,7 @@ for name in namelist
     l1Q = sum(M .* abs.(field))
     val = μQ / l1Q
     println("the mean value is ", μQ)
-    println("the relative mean value is ", l1Q)
+    println("the l1 norm is ", l1Q)
     println("the relative mean value is ", val)
 
     println("------------------------------")

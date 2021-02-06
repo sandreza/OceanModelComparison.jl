@@ -25,14 +25,13 @@ periodicity = [false, true]
 ##
 DOFs = [32]
 Ns = [5]
-Novers = [0]
+Novers = [0, 1]
 fluxes = [RoeNumericalFlux()]
 periodicity = [true]
 
 for DOF in DOFs, N in Ns, Nover in Novers, flux in fluxes, periodic in periodicity
     # simulation times
     timeend = FT(200) # s
-    nout = 100
 
     filename, Ne, dt = generate_name(DOF, N, Nover, flux, periodic)
     println("curretly doing " * filename)
@@ -41,6 +40,7 @@ for DOF in DOFs, N in Ns, Nover in Novers, flux in fluxes, periodic in periodici
     Nʸ = Ne
     Nᶻ = 1
 
+    nout = round(Int, 2 / dt)
     # model params
     cₛ = sqrt(10) # m/s
     ρₒ = 1 # kg/m³

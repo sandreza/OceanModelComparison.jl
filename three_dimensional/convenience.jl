@@ -24,8 +24,14 @@ function generate_name(DOF, N, Nover, flux, periodic; L = 4π, mpicomm = MPI.COM
         DeviceArray = Array,
         polynomialorder = N + Nover,
     )
+    cflgrid = DiscontinuousSpectralElementGrid(
+        topl,
+        FloatType = FT,
+        DeviceArray = Array,
+        polynomialorder = N,
+    )
     
-    Δx =  min_node_distance(grid)
+    Δx =  min_node_distance(cflgrid)
     cfl = 0.15
     dt = cfl * Δx / √10
 
