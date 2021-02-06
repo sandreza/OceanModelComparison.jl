@@ -71,7 +71,7 @@ struct Buoyancy{T} <: Forcing
     g::T # m/s²
     function KinematicStress{T}(;
         α = T(2e-4),
-        g = FT(10),
+        g = T(10),
     ) where {T <: AbstractFloat}
         return new{T}(α, g)
     end
@@ -374,7 +374,7 @@ end
 
 @inline wavespeed(m::CNSE3D, _...) = m.cₛ
 
-roe_average(ρ⁻, ρ⁺, var⁻, var⁺) =
+@inline roe_average(ρ⁻, ρ⁺, var⁻, var⁺) =
     (sqrt(ρ⁻) * var⁻ + sqrt(ρ⁺) * var⁺) / (sqrt(ρ⁻) + sqrt(ρ⁺))
 
 function numerical_flux_first_order!(

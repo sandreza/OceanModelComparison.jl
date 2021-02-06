@@ -60,7 +60,7 @@ for name in namelist
     end
     Q = f[string(100)]
     val = sum(M .* ϕ.data)/sum(M .* abs.(ϕ.data))
-    if val ≥ eps(1e2)
+    if val ≥ eps(1e0)
         println(name * " not conserved to machine precision at " * string(100))
         println("the relative value is ", val)
         println("the value is ", sum(M .* ϕ.data))
