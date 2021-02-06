@@ -1,7 +1,7 @@
 using Test
 using JLD2
 using ClimateMachine
-ClimateMachine.init()
+ClimateMachine.init(disable_gpu = true)
 using ClimateMachine.ODESolvers
 using ClimateMachine.Mesh.Filters
 using ClimateMachine.VariableTemplates
