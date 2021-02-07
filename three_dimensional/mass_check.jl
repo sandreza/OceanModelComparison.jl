@@ -16,13 +16,15 @@ DOFs = [32]
 Ns = [1, 2, 3, 4]
 Novers = [0, 1]
 fluxes = [RusanovNumericalFlux(), RoeNumericalFlux()]
-periodicity = [true] # [true, false]
+periodicity = [true, false] # [true, false]
 
+#=
 DOFs = [32]
 Ns = [4]
 Novers = [1]
 fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
 periodicity = [true]
+=#
 
 states = []
 namelist = []
@@ -52,17 +54,17 @@ for name in namelist
     M = view(newgrid.vgeo, :, newgrid.Mid, :)
     for timeindex in 100:100
         println("time " , timeindex)
-    Q = f[string(timeindex)]
-    for stateindex in 1:5
-        field = Q[:,stateindex,:] # this is the tracer
-        μQ = sum(M .* field) / sum(M) 
-        l1Q = sum(M .* abs.(field)) / sum(M)
-        val = μQ / l1Q
-        println("For stateindex " * string(stateindex))
-        println("the mean value is ", μQ)
-        println("the l1 norm is ", l1Q)
-        println("the relative mean value is ", val)
-    end
+        Q = f[string(timeindex)]
+        for stateindex in 1:5
+            field = Q[:,stateindex,:] # this is the tracer
+            μQ = sum(M .* field) / sum(M) 
+            l1Q = sum(M .* abs.(field)) / sum(M)
+            val = μQ / l1Q
+            println("For stateindex " * string(stateindex))
+            println("the mean value is ", μQ)
+            println("the l1 norm is ", l1Q)
+            println("the relative mean value is ", val)
+        end
         println("---------")
     end
 

@@ -22,18 +22,19 @@ Novers = [0, 1]
 fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
 periodicity = [false, true]
 
+#=
 DOFs = [32]
 Ns = [4]
 Novers = [1]
 fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
 periodicity = [true]
-
+=#
 for DOF in DOFs, N in Ns, Nover in Novers, flux in fluxes, periodic in periodicity
     # simulation times
     timeend = FT(200) # s
 
     filename, Ne, dt = generate_name(DOF, N, Nover, flux, periodic)
-    println("curretly doing " * filename)
+    println("currently doing " * filename)
     # Domain Resolution
     Nˣ = Ne
     Nʸ = Ne
