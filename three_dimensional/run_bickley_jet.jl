@@ -16,7 +16,7 @@ Lᶻ = 4 * FT(π)  # m
 
 vtkpath = abspath(joinpath(ClimateMachine.Settings.output_dir, "vtk_bickley_3D"))
 
-DOFs = [32]
+DOFs = [32, 128]
 Ns = [1, 2, 3, 4]
 Novers = [0, 1]
 fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
