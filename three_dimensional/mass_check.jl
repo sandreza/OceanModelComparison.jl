@@ -19,12 +19,11 @@ fluxes = [RusanovNumericalFlux(), RoeNumericalFlux()]
 periodicity = [true, false] # [true, false]
 
 
-DOFs = [256]
-Ns = [1,2,3,4]
-Novers = [1]
+DOFs = [32, 64]
+Ns = [1, 2, 3, 4]
+Novers = [0, 1]
 fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
 periodicity = [true, false]
-
 
 states = []
 namelist = []
