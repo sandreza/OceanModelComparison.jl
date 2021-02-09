@@ -79,6 +79,7 @@ function ocean_init_state!(
 
     x = aux.x
     y = aux.y
+    z = aux.z
 
     # The Bickley jet
     #=
