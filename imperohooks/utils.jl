@@ -95,23 +95,23 @@ function visualize(g::DiscontinuousSpectralElementGrid)
     tmpyf = @lift(y[g.vmap⁻[:, $face, $element]])
     tmpzf = @lift(z[g.vmap⁻[:, $face, $element]])
 
-    total_color = @lift(RGBA(0,0,0, $opacity))
+    total_color = @lift(RGBAf0(0,0,0, $opacity))
 
     lscene = layout[1:4, 2:4] = LScene(scene)
-    Makie.scatter!(lscene, x[:], y[:], z[:], color = total_color, markersize = 100.0, strokewidth = 0)
-    Makie.scatter!(lscene, tmpx, tmpy, tmpz, color = RGBA(0,0,0,0.5), markersize = 100.0, strokewidth = 0, camera = cam3d!)
-    Makie.scatter!(lscene, tmpxf, tmpyf, tmpzf, color = RGBA(1,0,0,1.0), markersize = 100.0, strokewidth = 0, camera = cam3d!)
-    supertitle = layout[1,2] = LText(scene, " "^10 * " Gauss-Lobatto Points " * " "^10, textsize = 50, color = :black)
+    GLMakie.scatter!(lscene, x[:], y[:], z[:], color = total_color, markersize = 100.0, strokewidth = 0)
+    GLMakie.scatter!(lscene, tmpx, tmpy, tmpz, color = RGBAf0(0,0,0,0.5), markersize = 100.0, strokewidth = 0, camera = cam3d!)
+    GLMakie.scatter!(lscene, tmpxf, tmpyf, tmpzf, color = RGBAf0(1,0,0,1.0), markersize = 100.0, strokewidth = 0, camera = cam3d!)
+    supertitle = layout[1,2] = Label(scene, " "^10 * " Gauss-Lobatto Points " * " "^10, textsize = 50, color = :black)
 
-    menu  = LMenu(scene, options = zip(e,e))
-    menu2 = LMenu(scene, options = zip(faces,faces))
-    menu3 = LMenu(scene, options = zip(opacities,opacities))
+    menu  = Menu(scene, options = zip(e,e))
+    menu2 = Menu(scene, options = zip(faces,faces))
+    menu3 = Menu(scene, options = zip(opacities,opacities))
     layout[1, 1] = vgrid!(
-        LText(scene, "Element", width = nothing),
+        Label(scene, "Element", width = nothing),
         menu,
-        LText(scene, "Face", width = nothing),
+        Label(scene, "Face", width = nothing),
         menu2,
-        LText(scene, "Opacity", width = nothing),
+        Label(scene, "Opacity", width = nothing),
         menu3,
     )
     on(menu.selection) do s

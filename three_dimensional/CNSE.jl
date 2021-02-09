@@ -135,10 +135,6 @@ function make_callbacks(
         end
         mkpath(vtkpath)
 
-        file = jldopen(filename * ".jld2", "a+")
-        file["grid"] = dg.grid
-        close(file)
-
         function do_output(vtkstep, model, dg, Q)
             outprefix = @sprintf(
                 "%s/mpirank%04d_step%04d",
@@ -146,18 +142,19 @@ function make_callbacks(
                 MPI.Comm_rank(mpicomm),
                 vtkstep
             )
-            #=
+            
             @info "doing VTK output" outprefix
             statenames =
                 flattenednames(vars_state(model, Prognostic(), eltype(Q)))
             auxnames = flattenednames(vars_state(model, Auxiliary(), eltype(Q)))
             writevtk(outprefix, Q, dg, statenames, dg.state_auxiliary, auxnames)
-            =#
+            
+            #=
             @info "doing JLD2 output" vtkstep
             file = jldopen(filename * ".jld2", "a+")
             file[string(vtkstep)] = Array(Q.realdata)
             close(file)
-
+            =#
             vtkstep += 1
 
             return vtkstep

@@ -10,11 +10,10 @@ const ArrayType = ClimateMachine.array_type()
 const mpicomm = MPI.COMM_WORLD
 const FT = Float64
 
-N = 8
-Ne_vert  = 1
+N = 4
+Ne_vert  = 3
 Ne_horz  = 3
 Rrange = range(0.5; length = Ne_vert + 1, stop = FT(1))
-
 topl = StackedCubedSphereTopology(mpicomm, Ne_horz, Rrange)
 spheregrid = DiscontinuousSpectralElementGrid(
         topl,
@@ -25,3 +24,19 @@ spheregrid = DiscontinuousSpectralElementGrid(
 )
 
 scene = visualize(spheregrid)
+
+#=
+
+record_interaction = true
+seconds = 10
+fps = 10
+frames = round(Int, fps * seconds )
+if record_interaction
+record(scene, pwd() * "/sphere.mp4"; framerate = fps) do io
+    for i = 1:frames
+        sleep(1/fps)
+        recordframe!(io)
+    end
+end
+end
+=#

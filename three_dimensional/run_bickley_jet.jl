@@ -18,9 +18,9 @@ let
 
     # Domain Resolution
     N = 3
-    Nˣ = 8
-    Nʸ = 8
-    Nᶻ = 1
+    Nˣ = 4
+    Nʸ = 4
+    Nᶻ = 4
 
     # Domain size
     Lˣ = 4 * FT(π)  # m
@@ -44,8 +44,8 @@ let
         resolution,
         domain,
         params;
-        numerical_flux_first_order = RusanovNumericalFlux(),
-        Nover = 0,
+        numerical_flux_first_order = RoeNumericalFlux(),
+        Nover = 1,
         periodicity = (true, true, true),
         boundary = ((0, 0), (0, 0), (0, 0)),
         boundary_conditons = (ClimateMachine.Ocean.OceanBC(
