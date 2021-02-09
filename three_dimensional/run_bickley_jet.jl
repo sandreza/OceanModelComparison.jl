@@ -23,9 +23,9 @@ fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
 periodicity = [false, true]
 
 
-DOFs = [256]
-Ns = [1,2,3,4]
-Novers = [1]
+DOFs = [32, 64]
+Ns = [1, 2, 3, 4]
+Novers = [0, 1]
 fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
 periodicity = [true, false]
 
@@ -38,7 +38,7 @@ for DOF in DOFs, N in Ns, Nover in Novers, flux in fluxes, periodic in periodici
     # Domain Resolution
     Nˣ = Ne
     Nʸ = Ne
-    Nᶻ = 1
+    Nᶻ = Ne
 
     nout = round(Int, 2 / dt)
     # model params
