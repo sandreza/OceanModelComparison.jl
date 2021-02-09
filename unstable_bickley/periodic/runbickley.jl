@@ -49,14 +49,15 @@ function ocean_init_state!(
     x = aux.x
     y = aux.y
 
-    # The Bickley jet
+    # The Bickley jet, Ψ = tanh(y)
     U = cosh(y)^(-2)
 
     # Slightly off-center vortical perturbations
     Ψ = exp(-(y + l / 10)^2 / (2 * (l^2))) * cos(k * x) * cos(k * y)
 
     # Vortical velocity fields (ũ, ṽ) = (-∂ʸ, +∂ˣ) ψ̃
-    u = Ψ * (k * tan(k * y) + y / (l^2))
+    # u = Ψ * (k * tan(k * y) + y / (l^2) + 1/(10 *l)) #for an incompressible flow field
+    u = Ψ * (k * tan(k * y) + y / (l^2) )
     v = -Ψ * k * tan(k * x)
 
     ρ = 1

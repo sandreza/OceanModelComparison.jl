@@ -79,7 +79,29 @@ function ocean_init_state!(
 
     x = aux.x
     y = aux.y
+    z = aux.z
 
+    # ψ = tanh(x^2 + y^2)
+    # U, V, W = (-∂ʸ, +∂ˣ, 0) ψ¹
+    r² = x^2 + y^2
+    U = -2y * sech(r²)^2
+    V =  2x * sech(r²)^2
+    W = 0
+    # Slightly off-center vortical perturbations
+    Ψ₁ = exp(-(y + l / 10)^2 / (2 * (l^2))) * cos(k * x) * cos(k * y)
+    Ψ₂ = exp(-(z + l / 10)^2 / (2 * (l^2))) * cos(k * x) * cos(k * z)
+    # Vortical velocity fields (u, v, w) = (-∂ʸ, +∂ˣ, 0) Ψ₁ + (0, -∂ᶻ, +∂ˣ)Ψ₂
+    u =  Ψ₁ * (k * tan(k * y) + y / (l^2) + 1/(10 * l)) 
+    v = -Ψ₁ * k * tan(k * x) + Ψ₂ * (k * tan(k * z) + z / (l^2) + 1/(10 * l)) 
+    w = -Ψ₂ * k * tan(k * z) 
+
+    ρ = model.ρₒ
+    state.ρ = ρ
+    state.ρu = ρ * @SVector [U + ϵ * u, V + ϵ * v, W + ϵ * w]
+    state.ρθ = ρ * sin(k * y)
+
+    #=
+    2D
     # The Bickley jet
     U = cosh(y)^(-2)
 
@@ -87,6 +109,7 @@ function ocean_init_state!(
     Ψ = exp(-(y + l / 10)^2 / (2 * (l^2))) * cos(k * x) * cos(k * y)
 
     # Vortical velocity fields (ũ, ṽ) = (-∂ʸ, +∂ˣ) ψ̃
+    # u = Ψ * (k * tan(k * y) + y / (l^2) + 1/(10 * l))
     u = Ψ * (k * tan(k * y) + y / (l^2))
     v = -Ψ * k * tan(k * x)
 
@@ -94,7 +117,7 @@ function ocean_init_state!(
     state.ρ = ρ
     state.ρu = ρ * @SVector [U + ϵ * u, ϵ * v, -0]
     state.ρθ = ρ * sin(k * y)
-
+    =#
     return nothing
 end
 
