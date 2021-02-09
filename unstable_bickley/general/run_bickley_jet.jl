@@ -16,17 +16,32 @@ Novers = [0, 1]
 fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
 periodicity = [false, true]
 
-for DOF in DOFs, N in Ns, Nover in Novers, flux in fluxes, periodic in periodicity
+# for Rusanov flux:
+# cfl of 0.333 for SPPRK22Heuns and no overintegration 0.5 failed, 56
+# cfl of 0.25 for SPPRK22Heuns and  overintegration 0.5 failed, 133
+
+
+DOFs = [256]
+Ns = [1]
+Novers = [1]
+fluxes = [RusanovNumericalFlux()]
+periodicity = [true]
+cfls = [6,5]
+timesteppers = [SSPRK22Heuns]
+#  SSPRK22Heuns, LSRK54CarpenterKennedy, LSRK144NiegemannDiehlBusch, LSRKEulerMethod
+
+for DOF in DOFs, N in Ns, Nover in Novers, flux in fluxes, periodic in periodicity, cfl in cfls, timestepper in timesteppers
     
 L = 4π
 endtime = 200.0
 
-filename, Ne, dt = generate_name_2(DOF, N, Nover, flux, periodic, L = L, endtime = endtime)
+filename, Ne, dt = generate_name_3(DOF, N, Nover, flux, periodic, L = L, endtime = endtime, cflind = cfl)
 println("Doing " * filename)
 # simulation times
 timeend = FT(endtime) # s
 dt = FT(dt) # s
 nout = round(Int, 2 / dt)
+println("dt is ", dt)
 # Domain size
 Lˣ = L  # m
 Lʸ = L  # m
@@ -63,7 +78,7 @@ end
 
 tic = Base.time()
 
-run_bickley_jet(config, params; TimeStepper = SSPRK22Heuns, vtkpath = "")
+run_bickley_jet(config, params; TimeStepper = timestepper, vtkpath = "")
 #  LSRK54CarpenterKennedy
 toc = Base.time()
 time = toc - tic

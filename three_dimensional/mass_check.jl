@@ -18,13 +18,13 @@ Novers = [0, 1]
 fluxes = [RusanovNumericalFlux(), RoeNumericalFlux()]
 periodicity = [true, false] # [true, false]
 
-#=
-DOFs = [32]
-Ns = [4]
+
+DOFs = [256]
+Ns = [1,2,3,4]
 Novers = [1]
 fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
-periodicity = [true]
-=#
+periodicity = [true, false]
+
 
 states = []
 namelist = []
@@ -37,17 +37,17 @@ end
 ##
 for name in namelist
     f = jldopen(name * ".jld2", "r+")
-    simtime = f["simulationtime"]
-    threadnum = f["threads"]
-    array = f["arraytype"]
-    if array == "Array" 
-        archstring = " on the CPU with " * string(threadnum) * " threads"
-    else
-        archstring = " on the GPU"
-    end
+    #simtime = f["simulationtime"]
+    #threadnum = f["threads"]
+    #array = f["arraytype"]
+    #if array == "Array" 
+        #archstring = " on the CPU with " * string(threadnum) * " threads"
+    #else
+        #archstring = " on the GPU"
+    #end
     prettyname = nameprettifier(name)
     println("For simulation " * name)
-    println("The simulation time was " * @sprintf("%0.2f", simtime) * " seconds for " * prettyname * archstring)
+    #println("The simulation time was " * @sprintf("%0.2f", simtime) * " seconds for " * prettyname * archstring)
     # get old grid
     newgrid = f["grid"]
     # interpolate

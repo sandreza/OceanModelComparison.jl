@@ -81,6 +81,53 @@ function generate_name_2(DOF, N, Nover, flux, periodic; L = 4π, mpicomm = MPI.C
     return filename, Ne, dt
 end
 
+function generate_name_3(DOF, N, Nover, flux, periodic; L = 4π, mpicomm = MPI.COMM_WORLD, endtime = 200, cflind = 6)
+    Ne = round(Int, DOF / (N+1))
+    Nˣ = Ne
+    Nʸ = Ne
+    Lˣ = L 
+    Lʸ = L
+    # grid
+    xrange = range(-Lˣ / 2; length = Nˣ + 1, stop = Lˣ / 2)
+    yrange = range(-Lʸ / 2; length = Nʸ + 1, stop = Lʸ / 2)
+    mpicomm = mpicomm
+    brickrange = (xrange, yrange)
+    topl = BrickTopology(
+        mpicomm,
+        brickrange,
+        periodicity = (true, periodic),
+        boundary = ((0, 0), (0, 0)),
+    )
+    grid = DiscontinuousSpectralElementGrid(
+        topl,
+        FloatType = FT,
+        DeviceArray = Array,
+        polynomialorder = N + Nover,
+    )
+
+    cflgrid = DiscontinuousSpectralElementGrid(
+        topl,
+        FloatType = FT,
+        DeviceArray = Array,
+        polynomialorder = N ,
+    )
+    
+    Δx =  min_node_distance(cflgrid)
+    cfl = 1.0/cflind
+    dt = cfl * Δx / √10
+
+    # run
+    timeend = FT(endtime) # s
+    nout = round(Int, 2 / dt)
+    dt = 2 / nout
+    filename = "flux_" * strip(string(flux), ['(', ')']) * "_p" * string(N) * "_N" * string(Ne) * "_Nover" * string(Nover) * "_periodicity_" * string(periodic) * "_cflind_" * string(cflind)
+    f = jldopen(filename * ".jld2", "a+")
+    f["grid"] = grid
+    close(f)
+    return filename, Ne, dt
+end
+
+
 function just_generate_name_2(DOF, N, Nover, flux, periodic; L = 4π, mpicomm = MPI.COMM_WORLD, endtime = 200)
     Ne = round(Int, DOF / (N+1))
     Nˣ = Ne

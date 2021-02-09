@@ -495,7 +495,7 @@ function numerical_flux_first_order!(
 
     # actually calculate flux
     # parent(fluxᵀn) .-= R * Λ * (R \ Δφ) / 2
-    parent(fluxᵀn) .-= R * Λ * R⁻¹ * Δφ / 2
+    parent(fluxᵀn) .-= R * Λ * R⁻¹ * Δφ * 0.5
 
     return nothing
 end
