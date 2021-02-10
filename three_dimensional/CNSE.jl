@@ -121,10 +121,12 @@ function make_callbacks(
                 ),
                 energy
             )
-
+            # let the simulation go on
+            #=
             if isnan(energy)
                 error("NaNs")
             end
+            =#
         end
     end
 
@@ -151,7 +153,7 @@ function make_callbacks(
             auxnames = flattenednames(vars_state(model, Auxiliary(), eltype(Q)))
             writevtk(outprefix, Q, dg, statenames, dg.state_auxiliary, auxnames)
             =#
-            @info "doing JLD2 output" vtkstep
+            @info "doing JLD2 output" filename vtkstep
             file = jldopen(filename * ".jld2", "a+")
             file[string(vtkstep)] = Array(Q.realdata)
             close(file)

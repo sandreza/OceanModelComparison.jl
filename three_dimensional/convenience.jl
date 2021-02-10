@@ -2,7 +2,7 @@ function generate_name(DOF, N, Nover, flux, periodic; L = 4π, mpicomm = MPI.COM
     Ne = round(Int, DOF / (N+1))
     Nˣ = Ne
     Nʸ = Ne
-    Nᶻ = 1
+    Nᶻ = Ne
     Lˣ = L 
     Lʸ = L
     Lᶻ = L
@@ -32,7 +32,7 @@ function generate_name(DOF, N, Nover, flux, periodic; L = 4π, mpicomm = MPI.COM
     )
     
     Δx =  min_node_distance(cflgrid)
-    cfl = 0.15
+    cfl = 0.1 
     dt = cfl * Δx / √10
 
     # run

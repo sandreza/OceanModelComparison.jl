@@ -23,7 +23,7 @@ DOFs = [32, 64]
 Ns = [1, 2, 3, 4]
 Novers = [0, 1]
 fluxes = [RoeNumericalFlux(), RusanovNumericalFlux()]
-periodicity = [true, false]
+periodicity = [true]
 
 states = []
 namelist = []
