@@ -97,7 +97,7 @@ function ocean_init_state!(
     state.ρu = ρ * @SVector [U + ϵ * u, ϵ * v, -0]
     state.ρθ = ρ * sin(k * y)
     =#
-
+    #=
     U = sech(y)^2
     V = 0
     W = 0
@@ -108,6 +108,17 @@ function ocean_init_state!(
     u =  Ψ₁ * (k * tan(k * y) + y / (l^2) + 1/(10 * l)) 
     v = -Ψ₁ * k * tan(k * x)  + Ψ₂ * (k * tan(k * z) + z / (l^2) + 1/(10 * l)) 
     w = -Ψ₂ * k * tan(k * x) 
+    =#
+    U = sech(y)^2
+    V = 0
+    W = 0
+    # Slightly off-center vortical perturbations
+    Ψ₁ = exp(-(y + l / 10)^2 / (2 * (l^2))) * cos(k * x) * cos(k * y)
+    Ψ₂ = exp(-(z + l / 10)^2 / (2 * (l^2))) * cos(k * y) * cos(k * z)
+    # Vortical velocity fields (u, v, w) = (-∂ʸ, +∂ˣ, 0) Ψ₁ + (0, -∂ᶻ, +∂ʸ)Ψ₂ 
+    u =  Ψ₁ * (k * tan(k * y) + y / (l^2) + 1/(10 * l)) 
+    v = -Ψ₁ * k * tan(k * x)  + Ψ₂ * (k * tan(k * z) + z / (l^2) + 1/(10 * l)) 
+    w = -Ψ₂ * k * tan(k * y) 
 
     ρ = model.ρₒ
     state.ρ = ρ
