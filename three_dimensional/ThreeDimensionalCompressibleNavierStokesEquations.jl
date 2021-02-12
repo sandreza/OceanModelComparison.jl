@@ -69,7 +69,7 @@ abstract type Forcing end
 struct Buoyancy{T} <: Forcing
     α::T # 1/K
     g::T # m/s²
-    function KinematicStress{T}(;
+    function Buoyancy{T}(;
         α = T(2e-4),
         g = T(10),
     ) where {T <: AbstractFloat}

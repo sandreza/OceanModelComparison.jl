@@ -11,6 +11,7 @@ function Config(
     periodicity = (true, true, true),
     boundary = ((0, 0), (0, 0), (0, 0)),
     boundary_conditons = (),
+    FT = Float64
 )
     mpicomm = MPI.COMM_WORLD
     ArrayType = ClimateMachine.array_type()

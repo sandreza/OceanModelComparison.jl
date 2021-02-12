@@ -36,6 +36,7 @@ function run_CNSE(
     timespan;
     TimeStepper = LSRK54CarpenterKennedy,
     refDat = (),
+    FT = Float64,
 )
     dg = config.dg
     Q = init_ode_state(dg, FT(0); init_on_cpu = true)

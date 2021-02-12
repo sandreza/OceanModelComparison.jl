@@ -1,5 +1,4 @@
 include("box.jl")
-# ClimateMachine.inFT = Float64
 
 #################
 # Initial State #
@@ -18,7 +17,7 @@ function ocean_init_state!(
     y = aux.y
     z = aux.z
 
-    ϵ = 0.01
+    ϵ = 0.00
     ρ = model.ρₒ
     state.ρ = ρ
     state.ρu = ρ * @SVector [-ϵ * sin(2π*y/100.0), -0, -0.00]
@@ -34,15 +33,16 @@ end
 vtkpath = abspath(joinpath(ClimateMachine.Settings.output_dir, "vtk_box_3D"))
 
 let
+    FT = Float64
     # simulation times
     timeend = FT(200) # s
-    dt = FT(10.0) # s
+    dt = FT(1.0) # s
     nout = Int(20)
 
     # Domain Resolution
     N  = 1
-    Nˣ = 2
-    Nʸ = 2
+    Nˣ = 1
+    Nʸ = 1
     Nᶻ = 2
 
     # Domain size
@@ -57,7 +57,7 @@ let
     ν  = 1e-2   # m²/s
     κ  = 1e-2   # m²/s
     α  = 2e-4   # 1/K
-    g  = 10.0   # m/s²
+    g  = 0.0   # m/s²
 
     resolution = (; N, Nˣ, Nʸ, Nᶻ)
     domain = (; Lˣ, Lʸ, Lᶻ)
@@ -67,7 +67,7 @@ let
     BC = (
         ClimateMachine.Ocean.OceanBC(
             Impenetrable(NoSlip()), 
-            TemperatureFlux((state, aux, t) -> (0.0))
+            TemperatureFlux((state, aux, t) -> (κ * 0.01))
         ),
         ClimateMachine.Ocean.OceanBC(
             Impenetrable(KinematicStress(
