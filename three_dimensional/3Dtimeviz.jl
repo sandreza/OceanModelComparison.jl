@@ -3,9 +3,9 @@ include(pwd() * "/unstable_bickley/periodic/imperohooks.jl")
 include(pwd() * "/unstable_bickley/periodic/vizinanigans.jl")
 
 DOFs = [64]
-Ns = [3]
+Ns = [2]
 Novers = [1]
-fluxes = [RusanovNumericalFlux(), RoeNumericalFlux()]
+fluxes = [RoeNumericalFlux()]
 periodicity = [true] # [true, false]
 
 states = []
@@ -36,9 +36,9 @@ for name in namelist
     x, y, z = coordinates(newgrid)
     ϕ =  ScalarField(copy(x), gridhelper)
     # new grid
-    newx = range(-2π, 2π, length = DOFs[1])
-    newy = range(-2π, 2π, length = DOFs[1])
-    newz = range(-2π, 2π, length = DOFs[1])
+    newx = range(-2π, 2π, length = DOFs[1]* 2)
+    newy = range(-2π, 2π, length = DOFs[1]* 2)
+    newz = range(-2π, 2π, length = DOFs[1]* 2)
     ρθ = zeros(length(newx), length(newy), length(newz), 100)
     # interpolate
     M = view(newgrid.vgeo, :, newgrid.Mid, :)
@@ -58,11 +58,12 @@ for name in namelist
     close(f)
 end
 ##
-vizstates = [states[2][:,:,:,i] for i in 1:100]
+tmpstates = copy(states)
+vizstates = [states[1][:,:,:,i] for i in 1:100]
 scene = volumeslicetime(vizstates, aspect = (1,1,1))
 
 
-##
+##* 2
 seconds = 10
 fps = 10
 frames = round(Int, fps * seconds )

@@ -22,7 +22,7 @@ using LinearAlgebra
 using StaticArrays
 using Logging, Printf, Dates
 
-function generate_name(DOF, N, Nover, flux, periodic; L = 4π, mpicomm = MPI.COMM_WORLD, endtime = 200)
+function generate_name(DOF, N, Nover, flux, periodic; L = 4π, mpicomm = MPI.COMM_WORLD, endtime = 200, FT = Float64)
     Ne = round(Int, DOF / (N+1))
     Nˣ = Ne
     Nʸ = Ne

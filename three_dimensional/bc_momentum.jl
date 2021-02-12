@@ -119,7 +119,7 @@ set numerical flux to zero for U
     args...,
 )
     FT = eltype(state⁺)
-    state⁺.ρu = @SVector zeros(FT, 2)
+    state⁺.ρu = @SVector zeros(FT, 3)
 
     return nothing
 end
@@ -216,8 +216,9 @@ sets ghost point to have specified flux on the boundary for ν∇u
 """
 @inline function ocean_boundary_state!(
     ::NumericalFluxSecondOrder,
-    ::Impenetrable{<:KinematicStress},
+    bc::Impenetrable{<:KinematicStress},
     model::CNSE3D,
+    ::ConstantViscosity,
     state⁺,
     gradflux⁺,
     aux⁺,
@@ -226,6 +227,7 @@ sets ghost point to have specified flux on the boundary for ν∇u
     gradflux⁻,
     aux⁻,
     t,
+    args...,
 )
     state⁺.ρu = state⁻.ρu
     gradflux⁺.ν∇u = n⁻ * bc.drag.stress(state⁻, aux⁻, t)'
@@ -261,9 +263,9 @@ sets ghost point to have specified flux on the boundary for ν∇u
 """
 @inline function ocean_boundary_state!(
     ::NumericalFluxSecondOrder,
-    ::Penetrable{<:KinematicStress},
+    bc::Penetrable{<:KinematicStress},
     shallow::CNSE3D,
-    ::TurbulenceClosure,
+    ::ConstantViscosity,
     state⁺,
     gradflux⁺,
     aux⁺,
@@ -272,6 +274,7 @@ sets ghost point to have specified flux on the boundary for ν∇u
     gradflux⁻,
     aux⁻,
     t,
+    args...,
 )
     state⁺.ρu = state⁻.ρu
     gradflux⁺.ν∇u = n⁻ * bc.drag.stress(state⁻, aux⁻, t)'

@@ -20,7 +20,7 @@ function Config(
     yrange =
         range(-domain.Lʸ / 2; length = resolution.Nʸ + 1, stop = domain.Lʸ / 2)
     zrange =
-        range(-domain.Lᶻ / 2; length = resolution.Nᶻ + 1, stop = domain.Lᶻ / 2)
+        range(-domain.Lᶻ ; length = resolution.Nᶻ + 1, stop = 0.0)
 
     brickrange = (xrange, yrange, zrange)
 
@@ -47,7 +47,10 @@ function Config(
             κ = params.κ,
         ),
         nothing,
-        nothing,
+        ThreeDimensionalCompressibleNavierStokes.Buoyancy{FT}(
+            α = params.α,
+            g = params.g,
+        ),
         boundary_conditons;
         cₛ = params.cₛ,
         ρₒ = params.ρₒ,
@@ -64,68 +67,7 @@ function Config(
     return Config(name, dg, Nover, mpicomm, ArrayType)
 end
 
-import ClimateMachine.Ocean: ocean_init_state!, ocean_init_aux!
-
-function ocean_init_state!(
-    model::ThreeDimensionalCompressibleNavierStokes.CNSE3D,
-    state,
-    aux,
-    localgeo,
-    t,
-)
-    ϵ = 0.1 # perturbation magnitude
-    l = 0.5 # Gaussian width
-    k = 0.5 # Sinusoidal wavenumber
-
-    x = aux.x
-    y = aux.y
-    z = aux.z
-
-    # ψ = tanh(x^2 + y^2 - 1)
-    # U, V, W = (-∂ʸ, +∂ˣ, 0) ψ¹
-    # tanh(y)
-    #=
-    r² = x^2 + y^2
-    U = -2y * sech(r²-1)^2
-    V =  2x * sech(r²-1)^2
-    W = 0
-    =#
-    U = sech(y)^2
-    V = 0
-    W = 0
-    # Slightly off-center vortical perturbations
-    Ψ₁ = exp(-(y + l / 10)^2 / (2 * (l^2))) * cos(k * x) * cos(k * y)
-    Ψ₂ = exp(-(z + l / 10)^2 / (2 * (l^2))) * cos(k * y) * cos(k * z)
-    # Vortical velocity fields (u, v, w) = (-∂ʸ, +∂ˣ, 0) Ψ₁ + (0, -∂ᶻ, +∂ʸ)Ψ₂ 
-    u =  Ψ₁ * (k * tan(k * y) + y / (l^2) + 1/(10 * l)) 
-    v = -Ψ₁ * k * tan(k * x)  + Ψ₂ * (k * tan(k * z) + z / (l^2) + 1/(10 * l)) 
-    w = -Ψ₂ * k * tan(k * y) 
-
-    ρ = model.ρₒ
-    state.ρ = ρ
-    state.ρu = ρ * @SVector [U + ϵ * u, V + ϵ * v, W + ϵ * w]
-    state.ρθ = ρ * sin(k * y)
-
-    #=
-    2D
-    # The Bickley jet
-    U = cosh(y)^(-2)
-
-    # Slightly off-center vortical perturbations
-    Ψ = exp(-(y + l / 10)^2 / (2 * (l^2))) * cos(k * x) * cos(k * y)
-
-    # Vortical velocity fields (ũ, ṽ) = (-∂ʸ, +∂ˣ) ψ̃
-    # u = Ψ * (k * tan(k * y) + y / (l^2) + 1/(10 * l))
-    u = Ψ * (k * tan(k * y) + y / (l^2))
-    v = -Ψ * k * tan(k * x)
-
-    ρ = model.ρₒ
-    state.ρ = ρ
-    state.ρu = ρ * @SVector [U + ϵ * u, ϵ * v, -0]
-    state.ρθ = ρ * sin(k * y)
-    =#
-    return nothing
-end
+import ClimateMachine.Ocean: ocean_init_aux!
 
 function ocean_init_aux!(
     ::ThreeDimensionalCompressibleNavierStokes.CNSE3D,

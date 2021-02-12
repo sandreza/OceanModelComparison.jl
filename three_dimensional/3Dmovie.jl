@@ -1,4 +1,4 @@
-# states = vizstates
+states = vizstates
 statenames = string.(1:length(states))
 units = ["" for i in eachindex(states)]
 aspect = (1, 1, 1)
@@ -233,6 +233,6 @@ display(scene)
 record(scene, "64dof.mp4", 1:100, framerate=10) do n
     statenode[] = n
     θ = -0.005 * 2π
-    alphanode[] = max(0.5 - n/50 ,0)
+    alphanode[] = max(0.5 - n/100 ,0)
     rotate_cam!(scene.children[1], (θ, 0, 0))
 end
